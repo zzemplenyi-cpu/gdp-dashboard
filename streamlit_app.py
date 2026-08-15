@@ -6,41 +6,111 @@ from plotly.subplots import make_subplots
 import eurostat
 
 st.set_page_config(
-    page_title="AZAKI - Magyarország vs EU Dashboard",
+    page_title="AZAKI - Mérlegen az elmúlt 16 év",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-st.title("🇭🇺 Magyarország vs. EU gazdasági összehasonlítás (1990-től)")
-st.caption("Adatforrás: Eurostat | Elemzés és vizualizáció: **azaki.eu**")
+# -----------------------------------------------------------------------------
+# GLOBAL CSS - MINDEN SZÖVEG, CAPTION ÉS ELEM FEKETÉRE ÁLLÍTÁSA
+# -----------------------------------------------------------------------------
+st.markdown("""
+<style>
+    /* Minden Streamlit szöveges elem és caption feketére kényszerítése */
+    html, body, p, div, span, label, h1, h2, h3, h4, h5, h6, 
+    .stCaption, [data-testid="stCaptionContainer"], small, .stMarkdown p {
+        color: #000000 !important;
+    }
+    
+    /* Táblázat stílusok */
+    .rank-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: sans-serif;
+        margin-top: -15px;
+        margin-bottom: 12px;
+        text-align: center;
+    }
+    .rank-table th, .rank-table td {
+        border: 1px solid #cbd5e1;
+        padding: 5px 2px;
+        text-align: center;
+        color: #000000;
+    }
+    .rank-table th {
+        background-color: #f1f5f9;
+        font-weight: 600;
+        font-size: 12px;
+    }
+    .rank-table td:first-child, .rank-table th:first-child {
+        text-align: left;
+        font-weight: bold;
+        background-color: #e2e8f0;
+        white-space: nowrap;
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+    .rank-table td:last-child, .rank-table th:last-child {
+        background-color: #f8fafc;
+        min-width: 75px;
+    }
+    .rank-table td:last-child span {
+        font-weight: bold;
+    }
+    .rank-table td:last-child {
+        font-size: 15px;
+    }
+    .rank-table span {
+        display: inline-block;
+    }
+    .source-text {
+        color: #000000 !important;
+        font-size: 12px;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+st.title("Mérlegen az elmúlt 16 év: Magyarország és a régió EU-s felzárkózása")
+
+st.markdown("""
+<div style="color: #000000 !important; font-size: 14px; line-height: 1.5; margin-bottom: 20px;">
+    Az Orbán Viktor nevével fémjelzett elmúlt 16 éves korszakot egyesek az ország történetének egyik legsikeresebb időszakaként festik le, míg mások inkább történelmi léptékű kihagyott lehetőségként látják, és az EU-pénzek által nyújtott hátszél ellenére folyamatosan romló közszolgáltatásról és nem működő országról beszélnek, ahol a régió többi országa messze elhúzott mellettünk. Arra nem tennék kísérletet, hogy a különböző politikai oldalak között ítéletet hirdessek, de arra igen, hogy ábrák sokaságával illusztráljam az ország teljesítményét, az EU átlaga és a 2004 után csatlakozott 13 ország átlagához képest, így a kedves olvasó mindezek ismeretében jobban, adat alapon hozhat ítéletet.
+    <br><br>
+    <span style="color: #000000 !important; font-weight: bold; font-size: 13px;">Adatforrás: Eurostat | Elemzés és vizualizáció: azaki.eu</span>
+</div>
+""", unsafe_allow_html=True)
+
 
 # -----------------------------------------------------------------------------
-# METADATA & SZŰRŐK
+# PLOTLY MOBILBARÁT BEÁLLÍTÁSOK
+# -----------------------------------------------------------------------------
+MOBILE_PLOT_CONFIG = {
+    'scrollZoom': False,
+    'displayModeBar': False,
+    'showAxisDragHandles': False
+}
+
+# -----------------------------------------------------------------------------
+# MUTATÓK ÉS METAADATOK (21 MUTATÓ)
 # -----------------------------------------------------------------------------
 INDICATORS = {
-    "GDP egy főre (PPS / EU27=100%)": {
+    "GDP egy főre (PPP)": {
         "code": "nama_10_pc",
         "unit": "PC_EU27_2020_HAB_MPPS_CP",
         "na_item": "B1GQ",
         "desc": "Vásárlóerő-paritáson mért egy főre jutó GDP (EU27_2020 átlag = 100%)",
         "higher_is_better": True
     },
-    "Reál GDP növekedés (%)": {
-        "code": "nama_10_gdp",
-        "unit": "CLV_PCH_PRE",
-        "na_item": "B1GQ",
-        "desc": "Előző évhez képesti reál GDP változás %-ban",
+    "2 keresős 2 gyermekes család nettó éves keresete euróban": {
+        "code": "earn_nt_net",
+        "currency": "EUR",
+        "estruct": "NET",
+        "ecase": "CPL_CH2_AW100_100",
+        "desc": "Éves nettó kereset EUR-ban a családi adókedvezmények után (kétkeresős, 2 gyermekes háztartás, ahol mindkét szülő az átlagbér 100%-át keresi)",
         "higher_is_better": True
     },
-    "Infláció (HICP / CPI %)": {
-        "code": "prc_hicp_aind",
-        "unit": "RCH_A_AVG",
-        "coicop": "CP00",
-        "desc": "Harmonizált fogyasztói árindex éves átlagos változása (%)",
-        "higher_is_better": False
-    },
-    "Munkanélküliségi ráta (%)": {
+    "Munkanélküliségi ráta": {
         "code": "une_rt_a",
         "unit": "PC_ACT",
         "age": "Y15-74",
@@ -48,7 +118,7 @@ INDICATORS = {
         "desc": "Munkanélküliségi ráta a 15-74 éves népesség körében (%)",
         "higher_is_better": False
     },
-    "Foglalkoztatási ráta (%)": {
+    "Foglalkoztatási ráta": {
         "code": "lfsi_emp_a",
         "unit": "PC_POP",
         "age": "Y20-64",
@@ -58,20 +128,128 @@ INDICATORS = {
         "desc": "Foglalkoztatási ráta a 20-64 éves népesség körében (%)",
         "higher_is_better": True
     },
-    "Államadósság (% GDP)": {
+    "Termékenységi ráta": {
+        "code": "demo_find",
+        "indi": "TOTFERTRT",
+        "desc": "Teljes termékenységi arányszám (gyermek/nő)",
+        "higher_is_better": True
+    },
+    "Népesség": {
+        "code": "demo_gind",
+        "indi": "AVG",
+        "desc": "Átlagos éves népességszám (fő)",
+        "higher_is_better": True
+    },
+    "Várható élettartam": {
+        "code": "demo_mlexpec",
+        "sex": "T",
+        "age": "Y_LT1",
+        "desc": "Születéskor várható élettartam (évek száma)",
+        "higher_is_better": True
+    },
+    "Egészségben eltöltött várható élettartam": {
+        "code": "hlth_hlye",
+        "sex": "T",
+        "unit": "YR",
+        "desc": "Egészségben eltöltött várható élettartam születéskor (évek száma)",
+        "higher_is_better": True
+    },
+    "Egészségügyi kiadások a GDP %-ában": {
+        "code": "hlth_sha11_hc",
+        "unit": "PC_GDP",
+        "icha11_hc": "TOT_HC",
+        "desc": "Folyó egészségügyi kiadások a GDP százalékában (%)",
+        "higher_is_better": True
+    },
+    "Megelőzhető és kezelhető halálozási ráta": {
+        "code": "hlth_cd_apr",
+        "unit": "NR",
+        "sex": "T",
+        "icd10": "TOTAL",
+        "desc": "Elkerülhető és kezelhető halálozások száma 100 000 lakosra vetítve",
+        "higher_is_better": False
+    },
+    "Oktatási kiadások a GDP %-ában": {
+        "code": "gov_10a_exp",
+        "unit": "PC_GDP",
+        "cofog99": "GF09",
+        "sector": "S13",
+        "desc": "Kormányzati oktatási kiadások a GDP százalékában (%)",
+        "higher_is_better": True
+    },
+    "Felsőfokú végzettségűek aránya": {
+        "code": "edat_lfse_03",
+        "unit": "PC",
+        "age": "Y25-34",
+        "sex": "T",
+        "isced11": "ED5-8",
+        "desc": "Felsőfokú végzettséggel rendelkező 25-34 évesek aránya (%)",
+        "higher_is_better": True
+    },
+    "Infláció (CPI)": {
+        "code": "prc_hicp_aind",
+        "unit": "RCH_A_AVG",
+        "coicop": "CP00",
+        "desc": "Harmonizált fogyasztói árindex éves átlagos változása (%)",
+        "higher_is_better": False
+    },
+    "Költségvetési hiány a GDP %-ában": {
+        "code": "gov_10dd_edpt1",
+        "unit": "PC_GDP",
+        "sector": "S13",
+        "na_item": "B9",
+        "desc": "Kormányzati egyenleg (hiány/többlet) a GDP százalékában (%)",
+        "higher_is_better": True
+    },
+    "Államadósság a GDP %-ában": {
         "code": "gov_10dd_edpt1",
         "unit": "PC_GDP",
         "sector": "S13",
         "na_item": "GD",
-        "desc": "Bruttó államadósság a GDP százalékában (S13 szektor)",
+        "desc": "Bruttó államadósság a GDP százalékában (%)",
         "higher_is_better": False
     },
-    "Hosszú távú kamatláb / Állampapírhozam (%)": {
+    "10 éves államkötvényhozamok": {
         "code": "irt_lt_mcby_a",
         "unit": "PC",
         "int_rt": "MCBY",
         "desc": "10 éves államkötvények másodlagos piaci hozama (%)",
         "higher_is_better": False
+    },
+    "Beruházási ráta": {
+        "code": "nama_10_gdp",
+        "unit": "PC_GDP",
+        "na_item": "P51G",
+        "desc": "Bruttó állóeszköz-felhalmozás a GDP százalékában (%)",
+        "higher_is_better": True
+    },
+    "Termelékenység (GDP/foglalkoztatott)": {
+        "code": "nama_10_lp_ulc",
+        "unit": "I2015",
+        "na_item": "RLPR_PERSON",
+        "desc": "Munkatermelékenység egy foglalkoztatottra vetítve (Index, 2015 = 100%)",
+        "higher_is_better": True
+    },
+    "Lakásárindex": {
+        "code": "prc_hpi_a",
+        "unit": "INX_A",
+        "purchase": "TOTAL",
+        "desc": "Lakásárindex éves átlaga (2015 = 100%)",
+        "higher_is_better": True
+    },
+    "Lakásépítések száma 1000 lakosra": {
+        "code": "build_ijin_a",
+        "unit": "NR",
+        "indic_sb": "B111",
+        "desc": "Kiadott építési engedélyek / épített lakások száma",
+        "higher_is_better": True
+    },
+    "Reál GDP növekedés": {
+        "code": "nama_10_gdp",
+        "unit": "CLV_PCH_PRE",
+        "na_item": "B1GQ",
+        "desc": "Előző évhez képesti reál GDP változás %-ban",
+        "higher_is_better": True
     }
 }
 
@@ -119,7 +297,7 @@ SORT_ORDER = ["Magyarország", "EU27 Átlag", "EU13 Átlag", "Lengyelország", "
 @st.dialog("🔗 Ábra beágyazása a weboldaladra / cikkedbe")
 def show_embed_modal(label_text, code_key):
     st.write("Másold ki az alábbi HTML kódot, és illeszd be a tartalomkezelődbe (WordPress, CMS, HTML):")
-    embed_code = f'<iframe src="https://azaki.eu?indicator={code_key}" width="100%" height="820" frameborder="0" scrolling="no"></iframe>\n<p style="font-size: 12px; color: #666;">Forrás: <a href="https://azaki.eu" target="_blank">azaki.eu</a> / Eurostat</p>'
+    embed_code = f'<iframe src="https://azaki.eu?indicator={code_key}" width="100%" height="820" frameborder="0" scrolling="no"></iframe>\n<p style="font-size: 12px; color: #000000;">Forrás: <a href="https://azaki.eu" target="_blank" style="color:#000000;">azaki.eu</a> / Eurostat</p>'
     st.code(embed_code, language="html")
     st.info("💡 A beágyazott grafikon megőrzi az interaktivitását, a helyezési táblázatot és az akciógombokat is!")
 
@@ -143,7 +321,8 @@ def prepare_clean_df(raw_df, info):
     if geo_col:
         df.rename(columns={geo_col[0]: 'geo'}, inplace=True)
 
-    for key in ['unit', 'na_item', 'coicop', 'age', 'sex', 'sector', 'indi', 'wstatus', 'int_rt']:
+    filter_keys = ['unit', 'na_item', 'coicop', 'age', 'sex', 'sector', 'indi', 'wstatus', 'int_rt', 'icha11_hc', 'icd10', 'cofog99', 'isced11', 'purchase', 'indic_sb']
+    for key in filter_keys:
         if key in info and key in df.columns:
             df = df[df[key] == info[key]]
 
@@ -168,12 +347,6 @@ def prepare_clean_df(raw_df, info):
 # -----------------------------------------------------------------------------
 st.sidebar.header("⚙️ Globális Beállítások")
 
-selected_indicators = st.sidebar.multiselect(
-    "Megjelenítendő mutatók:",
-    options=list(INDICATORS.keys()),
-    default=list(INDICATORS.keys())
-)
-
 default_countries = ["HU", "EU27_2020", "EU13_AVG", "PL", "RO"]
 
 selected_countries = st.sidebar.multiselect(
@@ -183,7 +356,7 @@ selected_countries = st.sidebar.multiselect(
     format_func=lambda c: f"{EU_COUNTRIES.get(c, c)} ({c})"
 )
 
-year_range = st.sidebar.slider("Időszak:", 1990, 2026, (2010, 2025))
+year_range = st.sidebar.slider("Időszak:", 1990, 2026, (2010, 2026))
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("📐 Nézet beállítások")
@@ -194,17 +367,12 @@ if use_indexing:
     base_year = st.sidebar.number_input("Bázisév (100%):", min_value=year_range[0], max_value=year_range[1], value=year_range[0])
 
 # -----------------------------------------------------------------------------
-# FELDOLGOZÁS ÉS MEGJELENÍTÉS
+# FELDOLGOZÁS ÉS MEGJELENÍTÉS (MINDEN MUTATÓ AUTOMATIKUSEN)
 # -----------------------------------------------------------------------------
-if not selected_indicators:
-    st.info("Kérlek, válassz ki legalább egy mutatót a bal oldali sávban!")
-
-for label in selected_indicators:
-    info = INDICATORS[label]
-    
+for label, info in INDICATORS.items():
     st.markdown("---")
     st.subheader(f"📊 {label}")
-    st.caption(info["desc"])
+    st.markdown(f"<div style='color: #000000; font-size: 14px; margin-bottom: 10px;'>{info['desc']}</div>", unsafe_allow_html=True)
 
     with st.spinner(f"Adatok betöltése ({label})..."):
         raw_df = load_eurostat_dataset(info["code"])
@@ -229,7 +397,7 @@ for label in selected_indicators:
                 eu13_yr['rank'] = eu13_yr['Érték'].rank(ascending=not info['higher_is_better'], method='min')
                 hu_rank = int(eu13_yr[eu13_yr['geo'] == 'HU']['rank'].values[0])
                 raw_ranks_eu13[yr] = hu_rank
-                rank_eu13_str = f"<b><span style='font-size:15px;'>{hu_rank}</span></b><span style='font-size:10px;'>/{total_eu13}</span>"
+                rank_eu13_str = f"<b><span style='font-size:15px; color:#d97706;'>{hu_rank}</span></b><span style='font-size:10px; color:#000000;'>/{total_eu13}</span>"
 
             # EU27 Helyezés
             eu27_yr = yr_data[yr_data['geo'].isin(EU27_CODES)].copy()
@@ -239,25 +407,32 @@ for label in selected_indicators:
                 eu27_yr['rank'] = eu27_yr['Érték'].rank(ascending=not info['higher_is_better'], method='min')
                 hu_rank27 = int(eu27_yr[eu27_yr['geo'] == 'HU']['rank'].values[0])
                 raw_ranks_eu27[yr] = hu_rank27
-                rank_eu27_str = f"<b><span style='font-size:15px;'>{hu_rank27}</span></b><span style='font-size:10px;'>/{total_eu27}</span>"
+                rank_eu27_str = f"<b><span style='font-size:15px; color:#2563eb;'>{hu_rank27}</span></b><span style='font-size:10px; color:#000000;'>/{total_eu27}</span>"
 
             ranks_dict[yr] = {
                 "eu13": rank_eu13_str,
                 "eu27": rank_eu27_str
             }
 
+        # --- HELYEZÉS VÁLTOZÁSÁNAK SZÍNEZETT KISZÁMÍTÁSA ---
         def calc_diff_html(raw_dict):
             valid_years = [y for y in years_in_range if y in raw_dict]
             if len(valid_years) >= 2:
                 start_rank = raw_dict[valid_years[0]]
                 end_rank = raw_dict[valid_years[-1]]
-                diff = start_rank - end_rank
-                if diff > 0:
-                    return f"<span style='color:#16a34a; font-weight:bold;'>▲ +{diff}</span>"
-                elif diff < 0:
-                    return f"<span style='color:#dc2626; font-weight:bold;'>▼ {diff}</span>"
+                
+                # A kisebb sorszám jelenti a jobb helyezést (1. hely a legjobb)
+                rank_change = start_rank - end_rank
+
+                if rank_change > 0:
+                    # JAVULÁS -> Zöld
+                    return f"<span style='color: #16a34a !important; font-weight: bold;'>▲ +{rank_change}</span>"
+                elif rank_change < 0:
+                    # ROMLÁS -> Piros
+                    return f"<span style='color: #dc2626 !important; font-weight: bold;'>▼ {rank_change}</span>"
                 else:
-                    return f"<span style='color:#64748b; font-weight:bold;'>➔ 0</span>"
+                    # VÁLTOZATLAN -> Fekete
+                    return f"<span style='color: #000000 !important; font-weight: bold;'>➔ 0</span>"
             return "-"
 
         diff_eu13_html = calc_diff_html(raw_ranks_eu13)
@@ -278,7 +453,6 @@ for label in selected_indicators:
         filtered_df['Ország'] = filtered_df['geo'].map(lambda x: EU_COUNTRIES.get(x, x))
 
         if not filtered_df.empty:
-            # BÁZISINDEX KISZÁMÍTÁSA
             if use_indexing:
                 base_values = filtered_df[filtered_df['Év'] == base_year].set_index('Ország')['Érték'].to_dict()
                 filtered_df['Megjelenített_Érték'] = filtered_df.apply(
@@ -295,7 +469,6 @@ for label in selected_indicators:
             ordered_countries = [c for c in SORT_ORDER if c in present_countries]
             ordered_countries += sorted([c for c in present_countries if c not in SORT_ORDER])
 
-            # --- HIGHLIGHT & HOVER VONALDIAGRAM ---
             fig = px.line(
                 filtered_df,
                 x='Év',
@@ -336,9 +509,29 @@ for label in selected_indicators:
             grid_fig.update_layout(
                 height=460,
                 hovermode="x unified",
-                xaxis=dict(dtick=1, range=[year_range[0] - 0.5, year_range[1] + 0.5]),
+                font=dict(color="#000000"),
+                title=dict(font=dict(color="#000000")),
+                xaxis=dict(
+                    dtick=1, 
+                    range=[year_range[0] - 0.5, year_range[1] + 0.5], 
+                    fixedrange=True,
+                    title=dict(font=dict(color="#000000")),
+                    tickfont=dict(color="#000000")
+                ),
+                yaxis=dict(
+                    fixedrange=True,
+                    title=dict(font=dict(color="#000000")),
+                    tickfont=dict(color="#000000")
+                ),
                 yaxis_title=y_axis_title,
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                legend=dict(
+                    orientation="h", 
+                    yanchor="bottom", 
+                    y=1.02, 
+                    xanchor="right", 
+                    x=1,
+                    font=dict(color="#000000")
+                ),
                 margin=dict(b=10, t=50, l=10, r=10),
                 updatemenus=[
                     dict(
@@ -349,70 +542,59 @@ for label in selected_indicators:
                         y=1.15,
                         xanchor="left",
                         yanchor="top",
+                        font=dict(color="#000000", size=12),
                         buttons=[
-                            dict(label="Címkék: KI", method="restyle", args=[{"mode": "lines+markers"}]),
-                            dict(label="Címkék: BE", method="restyle", args=[{"mode": "lines+markers+text"}])
-                        ]
+                            dict(
+                                label="Címkék: KI", 
+                                method="restyle", 
+                                args=[{"mode": "lines+markers"}]
+                            ),
+                            dict(
+                                label="Címkék: BE", 
+                                method="restyle", 
+                                args=[{"mode": "lines+markers+text"}]
+                            )
+                        ],
+                        showactive=True,
+                        bgcolor="#f0f0f0",
+                        bordercolor="#cccccc",
+                        borderwidth=1
                     )
                 ]
             )
 
-            st.plotly_chart(grid_fig, use_container_width=True)
+            st.plotly_chart(grid_fig, use_container_width=True, config=MOBILE_PLOT_CONFIG)
 
-            # --- HELYEZÉSI TÁBLÁZAT ---
+            # --- HELYEZÉSI TÁBLÁZAT SZÍNEZETT VÁLTOZÁS OSZLOPOKKAL ---
             row_eu13_vals = [ranks_dict[y]["eu13"] for y in years_in_range] + [diff_eu13_html]
             row_eu27_vals = [ranks_dict[y]["eu27"] for y in years_in_range] + [diff_eu27_html]
 
             col_names = years_in_range + ["Változás"]
 
-            rank_df = pd.DataFrame(
-                [row_eu13_vals, row_eu27_vals],
-                index=["Régiós helyezés (EU13)", "EU helyezés (EU27)"],
-                columns=col_names
-            )
+            # Build HTML table manually for proper color rendering
+            html_table = '<table class="rank-table">'
+            html_table += '<thead><tr><th></th>'
+            for col in col_names:
+                html_table += f'<th>{col}</th>'
+            html_table += '</tr></thead><tbody>'
 
-            html_table = rank_df.to_html(escape=False, classes="rank-table")
-            
-            st.markdown("""
-            <style>
-            .rank-table {
-                width: 100%;
-                border-collapse: collapse;
-                font-family: sans-serif;
-                margin-top: -15px;
-                margin-bottom: 12px;
-                text-align: center;
-            }
-            .rank-table th, .rank-table td {
-                border: 1px solid #e2e8f0;
-                padding: 5px 2px;
-                text-align: center;
-            }
-            .rank-table th {
-                background-color: #f8fafc;
-                font-weight: 600;
-                font-size: 12px;
-                color: #475569;
-            }
-            .rank-table td:first-child, .rank-table th:first-child {
-                text-align: left;
-                font-weight: bold;
-                background-color: #f1f5f9;
-                white-space: nowrap;
-                padding-left: 8px;
-                padding-right: 8px;
-                color: #1e293b;
-            }
-            .rank-table td:last-child, .rank-table th:last-child {
-                background-color: #f8fafc;
-                min-width: 75px;
-            }
-            </style>
-            """, unsafe_allow_html=True)
-            
+            # Row 1: EU13
+            html_table += '<tr><td>Régiós helyezés (EU13)</td>'
+            for val in row_eu13_vals:
+                html_table += f'<td>{val}</td>'
+            html_table += '</tr>'
+
+            # Row 2: EU27
+            html_table += '<tr><td>EU helyezés (EU27)</td>'
+            for val in row_eu27_vals:
+                html_table += f'<td>{val}</td>'
+            html_table += '</tr>'
+
+            html_table += '</tbody></table>'
+
             st.markdown(html_table, unsafe_allow_html=True)
 
-            # --- ELEMZŐ MODUL: MAGYARORSZÁG LEMARADÁSA / ELŐNYE A RÉGIÓHOZ KÉPEST ---
+            # --- ELEMZŐ MODUL ---
             with st.expander(f"🎯 Magyarország lemaradása / előnye a régióhoz képest – {label}"):
                 available_refs = [c for c in selected_countries if c != "HU"]
                 
@@ -444,15 +626,17 @@ for label in selected_indicators:
                         
                         gap_fig.update_layout(
                             title=f"Magyarország vs. {EU_COUNTRIES.get(ref_country, ref_country)} közötti különbség",
-                            xaxis=dict(dtick=1),
+                            font=dict(color="#000000"),
+                            xaxis=dict(dtick=1, fixedrange=True, tickfont=dict(color="#000000"), title=dict(font=dict(color="#000000"))),
+                            yaxis=dict(fixedrange=True, tickfont=dict(color="#000000"), title=dict(font=dict(color="#000000"))),
                             yaxis_title="Különbség (pont / %)",
                             height=280,
                             template="plotly_white",
                             margin=dict(t=40, b=20)
                         )
-                        st.plotly_chart(gap_fig, use_container_width=True)
+                        st.plotly_chart(gap_fig, use_container_width=True, config=MOBILE_PLOT_CONFIG)
 
-            # --- AKCIÓGOMBOK EGY SORBAN ---
+            # --- AKCIÓGOMBOK ---
             c1, c2, c3, c4, c5 = st.columns([1.8, 1.8, 2.5, 2.0, 2.0])
             
             with c1:
@@ -469,10 +653,10 @@ for label in selected_indicators:
                 )
 
             with c3:
-                st.markdown("<div style='padding-top: 6px; font-size: 12px; color: #64748b;'>Adatforrás: <b>Eurostat</b></div>", unsafe_allow_html=True)
+                st.markdown("<div style='padding-top: 6px; font-size: 12px; color: #000000 !important; font-weight: bold;'>Adatforrás: <b>Eurostat</b></div>", unsafe_allow_html=True)
 
             with c4:
-                st.markdown("<div style='padding-top: 6px; font-size: 13px; color: #64748b; text-align: right;'><b>AZAKI.EU</b></div>", unsafe_allow_html=True)
+                st.markdown("<div style='padding-top: 6px; font-size: 13px; color: #000000 !important; text-align: right; font-weight: bold;'><b>AZAKI.EU</b></div>", unsafe_allow_html=True)
 
             with c5:
                 with st.popover("📄 Adattábla"):
@@ -490,13 +674,13 @@ for label in selected_indicators:
 # -----------------------------------------------------------------------------
 st.markdown("---")
 st.header("🔀 Két Mutató Együttes Ábrázolása (Dual-Axis Korreláció)")
-st.caption("Akkor hasznos, ha két makrogazdasági mutató kapcsolatát vizsgálod Magyarországon (pl. Infláció vs. GDP növekedés).")
+st.markdown("<div style='color: #000000 !important; font-size: 14px; margin-bottom: 15px;'>Akkor hasznos, ha két makrogazdasági mutató kapcsolatát vizsgálod Magyarországon (pl. Infláció vs. GDP növekedés).</div>", unsafe_allow_html=True)
 
 col_m1, col_m2 = st.columns(2)
 with col_m1:
     ind1 = st.selectbox("1. Mutató (Bal Y tengely):", options=list(INDICATORS.keys()), index=0)
 with col_m2:
-    ind2 = st.selectbox("2. Mutató (Jobb Y tengely):", options=list(INDICATORS.keys()), index=2)
+    ind2 = st.selectbox("2. Mutató (Jobb Y tengely):", options=list(INDICATORS.keys()), index=12)
 
 if ind1 and ind2:
     raw1 = load_eurostat_dataset(INDICATORS[ind1]["code"])
@@ -528,11 +712,14 @@ if ind1 and ind2:
             template="plotly_white",
             height=450,
             hovermode="x unified",
-            xaxis=dict(dtick=1),
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+            font=dict(color="#000000"),
+            xaxis=dict(dtick=1, fixedrange=True, tickfont=dict(color="#000000"), title=dict(font=dict(color="#000000"))),
+            yaxis=dict(fixedrange=True, tickfont=dict(color="#000000"), title=dict(font=dict(color="#000000"))),
+            yaxis2=dict(fixedrange=True, tickfont=dict(color="#000000"), title=dict(font=dict(color="#000000"))),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font=dict(color="#000000"))
         )
 
         dual_fig.update_yaxes(title_text=ind1, secondary_y=False)
         dual_fig.update_yaxes(title_text=ind2, secondary_y=True)
 
-        st.plotly_chart(dual_fig, use_container_width=True)
+        st.plotly_chart(dual_fig, use_container_width=True, config=MOBILE_PLOT_CONFIG)
