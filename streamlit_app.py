@@ -5,6 +5,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import eurostat
 import uuid
+import time
 
 st.set_page_config(
     page_title="AZAKI - Mérlegen az elmúlt 16 év",
@@ -14,14 +15,42 @@ st.set_page_config(
 )
 
 # -----------------------------------------------------------------------------
-# GLOBAL CSS - MINDEN SZÖVEG, CAPTION ÉS ELEM FEKETÉRE ÁLLÍTÁSA
+# GLOBAL CSS - FIXED FOR MOBILE (LIGHT BACKGROUND)
 # -----------------------------------------------------------------------------
 st.markdown("""
 <style>
+    /* Force light background for mobile */
+    .stApp {
+        background-color: #ffffff !important;
+    }
+    
     /* Minden Streamlit szöveges elem és caption feketére kényszerítése */
     html, body, p, div, span, label, h1, h2, h3, h4, h5, h6, 
-    .stCaption, [data-testid="stCaptionContainer"], small, .stMarkdown p {
+    .stCaption, [data-testid="stCaptionContainer"], small, .stMarkdown p,
+    .stMarkdown, .stText, .stSelectbox, .stMultiSelect, .stSlider {
         color: #000000 !important;
+        background-color: #ffffff !important;
+    }
+    
+    /* Fix sidebar on mobile */
+    .css-1d391kg, .css-1lcbmhc, .css-1adrfps, section[data-testid="stSidebar"] {
+        background-color: #ffffff !important;
+    }
+    
+    /* Fix all containers */
+    .st-bb, .st-bc, .st-bd, .st-be, .st-bf, .st-bg, .st-bh, .st-bi {
+        background-color: #ffffff !important;
+    }
+    
+    /* Fix expander background */
+    .streamlit-expanderHeader, .streamlit-expanderContent {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+    }
+    
+    /* Fix selectbox dropdown */
+    .stSelectbox div[data-baseweb="select"] {
+        background-color: #ffffff !important;
     }
     
     /* Táblázat stílusok */
@@ -32,28 +61,30 @@ st.markdown("""
         margin-top: -15px;
         margin-bottom: 12px;
         text-align: center;
+        background-color: #ffffff !important;
     }
     .rank-table th, .rank-table td {
         border: 1px solid #cbd5e1;
         padding: 5px 2px;
         text-align: center;
-        color: #000000;
+        color: #000000 !important;
+        background-color: #ffffff !important;
     }
     .rank-table th {
-        background-color: #f1f5f9;
+        background-color: #f1f5f9 !important;
         font-weight: 600;
         font-size: 12px;
     }
     .rank-table td:first-child, .rank-table th:first-child {
         text-align: left;
         font-weight: bold;
-        background-color: #e2e8f0;
+        background-color: #e2e8f0 !important;
         white-space: nowrap;
         padding-left: 8px;
         padding-right: 8px;
     }
     .rank-table td:last-child, .rank-table th:last-child {
-        background-color: #f8fafc;
+        background-color: #f8fafc !important;
         min-width: 75px;
     }
     .rank-table td:last-child span {
@@ -69,13 +100,29 @@ st.markdown("""
         color: #000000 !important;
         font-size: 12px;
     }
+    
+    /* Fix for Plotly charts on mobile */
+    .js-plotly-plot .plotly .main-svg {
+        background-color: #ffffff !important;
+    }
+    
+    /* Fix for mobile viewport */
+    @media (max-width: 768px) {
+        .stApp {
+            padding: 0 !important;
+        }
+        .main > div {
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+        }
+    }
 </style>
 """, unsafe_allow_html=True)
 
 st.title("Mérlegen az elmúlt 16 év: Magyarország és a régió EU-s felzárkózása")
 
 st.markdown("""
-<div style="color: #000000 !important; font-size: 14px; line-height: 1.5; margin-bottom: 20px;">
+<div style="color: #000000 !important; font-size: 14px; line-height: 1.5; margin-bottom: 20px; background-color: #ffffff; padding: 10px;">
     Az Orbán Viktor nevével fémjelzett elmúlt 16 éves korszakot egyesek az ország történetének egyik legsikeresebb időszakaként festik le, míg mások inkább történelmi léptékű kihagyott lehetőségként látják, és az EU-pénzek által nyújtott hátszél ellenére folyamatosan romló közszolgáltatásról és nem működő országról beszélnek, ahol a régió többi országa messze elhúzott mellettünk. Arra nem tennék kísérletet, hogy a különböző politikai oldalak között ítéletet hirdessek, de arra igen, hogy ábrák sokaságával illusztráljam az ország teljesítményét, az EU átlaga és a 2004 után csatlakozott 13 ország átlagához képest, így a kedves olvasó mindezek ismeretében jobban, adat alapon hozhat ítéletet.
     <br><br>
     <span style="color: #000000 !important; font-weight: bold; font-size: 13px;">Adatforrás: Eurostat | Elemzés és vizualizáció: azaki.eu</span>
@@ -89,7 +136,9 @@ st.markdown("""
 MOBILE_PLOT_CONFIG = {
     'scrollZoom': False,
     'displayModeBar': False,
-    'showAxisDragHandles': False
+    'showAxisDragHandles': False,
+    'responsive': True,
+    'staticPlot': False,
 }
 
 # -----------------------------------------------------------------------------
@@ -338,8 +387,6 @@ def prepare_clean_df(raw_df, info):
                 if key in df.columns:
                     if value in df[key].unique():
                         df = df[df[key] == value]
-                    else:
-                        st.warning(f"Value '{value}' not found in column '{key}'. Available values: {df[key].unique().tolist()}")
             
             if 'freq' in df.columns:
                 df = df[df['freq'] == 'A']
@@ -351,7 +398,6 @@ def prepare_clean_df(raw_df, info):
                 melted['Érték'] = pd.to_numeric(melted['Érték'], errors='coerce')
                 return melted.groupby(['geo', 'Év'], as_index=False)['Érték'].mean()
         except Exception as e:
-            st.error(f"Error processing household income data: {e}")
             return pd.DataFrame()
 
     # Special handling for fertility rate (demo_find)
@@ -360,8 +406,6 @@ def prepare_clean_df(raw_df, info):
             if 'indic_de' in df.columns and 'indic_de' in info:
                 if info['indic_de'] in df['indic_de'].unique():
                     df = df[df['indic_de'] == info['indic_de']]
-                else:
-                    st.warning(f"Value '{info['indic_de']}' not found in column 'indic_de'. Available: {df['indic_de'].unique().tolist()}")
             
             if 'sex' in df.columns:
                 df = df[df['sex'] == 'T']
@@ -376,32 +420,22 @@ def prepare_clean_df(raw_df, info):
                 melted['Érték'] = pd.to_numeric(melted['Érték'], errors='coerce')
                 return melted.groupby(['geo', 'Év'], as_index=False)['Érték'].mean()
         except Exception as e:
-            st.error(f"Error processing fertility data: {e}")
             return pd.DataFrame()
 
     # Special handling for healthy life years (hlth_hlye)
     if info["code"] == "hlth_hlye":
         try:
-            # Filter by sex = T (Total)
             if 'sex' in df.columns and 'sex' in info:
                 if info['sex'] in df['sex'].unique():
                     df = df[df['sex'] == info['sex']]
-                else:
-                    st.warning(f"Value '{info['sex']}' not found in column 'sex'. Available: {df['sex'].unique().tolist()}")
             
-            # Filter by hlth_hle = HLY_LE_Y0_PC
             if 'hlth_hle' in df.columns and 'hlth_hle' in info:
                 if info['hlth_hle'] in df['hlth_hle'].unique():
                     df = df[df['hlth_hle'] == info['hlth_hle']]
-                else:
-                    st.warning(f"Value '{info['hlth_hle']}' not found in column 'hlth_hle'. Available: {df['hlth_hle'].unique().tolist()}")
             
-            # Filter by unit = YR
             if 'unit' in df.columns and 'unit' in info:
                 if info['unit'] in df['unit'].unique():
                     df = df[df['unit'] == info['unit']]
-                else:
-                    st.warning(f"Value '{info['unit']}' not found in column 'unit'. Available: {df['unit'].unique().tolist()}")
             
             if 'freq' in df.columns:
                 df = df[df['freq'] == 'A']
@@ -413,7 +447,6 @@ def prepare_clean_df(raw_df, info):
                 melted['Érték'] = pd.to_numeric(melted['Érték'], errors='coerce')
                 return melted.groupby(['geo', 'Év'], as_index=False)['Érték'].mean()
         except Exception as e:
-            st.error(f"Error processing healthy life years data: {e}")
             return pd.DataFrame()
 
     # General filtering for other indicators
@@ -464,8 +497,25 @@ if use_indexing:
     base_year = st.sidebar.number_input("Bázisév (100%):", min_value=year_range[0], max_value=year_range[1], value=year_range[0])
 
 # -----------------------------------------------------------------------------
-# FELDOLGOZÁS ÉS MEGJELENÍTÉS (MINDEN MUTATÓ AUTOMATIKUSEN)
+# FELDOLGOZÁS ÉS MEGJELENÍTÉS - LAZY LOADING
 # -----------------------------------------------------------------------------
+
+# Create a session state variable to track which indicators have been loaded
+if 'loaded_indicators' not in st.session_state:
+    st.session_state.loaded_indicators = set()
+
+# Add a "Load All" button in sidebar
+st.sidebar.markdown("---")
+if st.sidebar.button("📊 Összes ábra betöltése", use_container_width=True):
+    st.session_state.load_all = True
+else:
+    if 'load_all' not in st.session_state:
+        st.session_state.load_all = False
+
+# Display a progress indicator
+st.sidebar.markdown("---")
+st.sidebar.info("💡 Az ábrák betöltése igény szerint történik. Kattints a 'Betöltés' gombra minden ábra alatt.")
+
 indicator_counter = 0
 
 for label, info in INDICATORS.items():
@@ -475,10 +525,33 @@ for label, info in INDICATORS.items():
     st.markdown("---")
     st.subheader(f"📊 {label}")
     st.markdown(f"<div style='color: #000000; font-size: 14px; margin-bottom: 10px;'>{info['desc']}</div>", unsafe_allow_html=True)
-
-    with st.spinner(f"Adatok betöltése ({label})..."):
-        raw_df = load_eurostat_dataset(info["code"])
-        all_countries_df = prepare_clean_df(raw_df, info)
+    
+    # Check if this indicator should be loaded
+    load_key = f"load_{info['code']}"
+    should_load = st.session_state.load_all or (load_key in st.session_state and st.session_state[load_key])
+    
+    # Button to load this indicator
+    col_btn, col_status = st.columns([1, 4])
+    with col_btn:
+        if not should_load:
+            if st.button(f"📊 Betöltés", key=f"btn_{info['code']}_{unique_key_suffix}"):
+                st.session_state[load_key] = True
+                st.rerun()
+    
+    if should_load:
+        with col_status:
+            st.markdown("🔄 *Betöltés folyamatban...*")
+        
+        with st.spinner(f"Adatok betöltése ({label})..."):
+            raw_df = load_eurostat_dataset(info["code"])
+            all_countries_df = prepare_clean_df(raw_df, info)
+        
+        # Mark as loaded
+        st.session_state.loaded_indicators.add(info['code'])
+    else:
+        with col_status:
+            st.markdown("⏳ *Kattints a 'Betöltés' gombra az ábra megjelenítéséhez*")
+        continue
 
     if not all_countries_df.empty:
         # --- HELYEZÉSEK SZÁMÍTÁSA MAGYARORSZÁGNAK ---
@@ -605,21 +678,25 @@ for label, info in INDICATORS.items():
                 grid_fig.add_trace(tr)
 
             grid_fig.update_layout(
-                height=460,
+                height=420,
                 hovermode="x unified",
                 font=dict(color="#000000"),
                 title=dict(font=dict(color="#000000")),
+                paper_bgcolor='rgba(255,255,255,1)',
+                plot_bgcolor='rgba(255,255,255,1)',
                 xaxis=dict(
                     dtick=1, 
                     range=[year_range[0] - 0.5, year_range[1] + 0.5], 
                     fixedrange=True,
                     title=dict(font=dict(color="#000000")),
-                    tickfont=dict(color="#000000")
+                    tickfont=dict(color="#000000"),
+                    gridcolor='#e0e0e0',
                 ),
                 yaxis=dict(
                     fixedrange=True,
                     title=dict(font=dict(color="#000000")),
-                    tickfont=dict(color="#000000")
+                    tickfont=dict(color="#000000"),
+                    gridcolor='#e0e0e0',
                 ),
                 yaxis_title=y_axis_title,
                 legend=dict(
@@ -720,8 +797,10 @@ for label, info in INDICATORS.items():
                         gap_fig.update_layout(
                             title=f"Magyarország vs. {EU_COUNTRIES.get(ref_country, ref_country)} közötti különbség",
                             font=dict(color="#000000"),
-                            xaxis=dict(dtick=1, fixedrange=True, tickfont=dict(color="#000000"), title=dict(font=dict(color="#000000"))),
-                            yaxis=dict(fixedrange=True, tickfont=dict(color="#000000"), title=dict(font=dict(color="#000000"))),
+                            paper_bgcolor='rgba(255,255,255,1)',
+                            plot_bgcolor='rgba(255,255,255,1)',
+                            xaxis=dict(dtick=1, fixedrange=True, tickfont=dict(color="#000000"), title=dict(font=dict(color="#000000")), gridcolor='#e0e0e0'),
+                            yaxis=dict(fixedrange=True, tickfont=dict(color="#000000"), title=dict(font=dict(color="#000000")), gridcolor='#e0e0e0'),
                             yaxis_title="Különbség (pont / %)",
                             height=280,
                             template="plotly_white",
@@ -786,11 +865,12 @@ with col_m2:
     )
 
 if ind1 and ind2:
-    raw1 = load_eurostat_dataset(INDICATORS[ind1]["code"])
-    raw2 = load_eurostat_dataset(INDICATORS[ind2]["code"])
+    with st.spinner("Adatok betöltése..."):
+        raw1 = load_eurostat_dataset(INDICATORS[ind1]["code"])
+        raw2 = load_eurostat_dataset(INDICATORS[ind2]["code"])
 
-    df1 = prepare_clean_df(raw1, INDICATORS[ind1])
-    df2 = prepare_clean_df(raw2, INDICATORS[ind2])
+        df1 = prepare_clean_df(raw1, INDICATORS[ind1])
+        df2 = prepare_clean_df(raw2, INDICATORS[ind2])
 
     if not df1.empty and not df2.empty:
         hu1 = df1[(df1['geo'] == 'HU') & (df1['Év'] >= year_range[0]) & (df1['Év'] <= year_range[1])].set_index('Év')['Érték']
@@ -816,9 +896,11 @@ if ind1 and ind2:
             height=450,
             hovermode="x unified",
             font=dict(color="#000000"),
-            xaxis=dict(dtick=1, fixedrange=True, tickfont=dict(color="#000000"), title=dict(font=dict(color="#000000"))),
-            yaxis=dict(fixedrange=True, tickfont=dict(color="#000000"), title=dict(font=dict(color="#000000"))),
-            yaxis2=dict(fixedrange=True, tickfont=dict(color="#000000"), title=dict(font=dict(color="#000000"))),
+            paper_bgcolor='rgba(255,255,255,1)',
+            plot_bgcolor='rgba(255,255,255,1)',
+            xaxis=dict(dtick=1, fixedrange=True, tickfont=dict(color="#000000"), title=dict(font=dict(color="#000000")), gridcolor='#e0e0e0'),
+            yaxis=dict(fixedrange=True, tickfont=dict(color="#000000"), title=dict(font=dict(color="#000000")), gridcolor='#e0e0e0'),
+            yaxis2=dict(fixedrange=True, tickfont=dict(color="#000000"), title=dict(font=dict(color="#000000")), gridcolor='#e0e0e0'),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font=dict(color="#000000"))
         )
 
