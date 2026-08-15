@@ -152,7 +152,7 @@ INDICATORS = {
         "code": "hlth_hlye",
         "sex": "T",
         "unit": "YR",
-        "age": "Y_LT1",
+        "hlth_hle": "HLY_LE_Y0_PC",
         "desc": "Egészségben eltöltött várható élettartam születéskor (évek száma)",
         "higher_is_better": True
     },
@@ -328,22 +328,18 @@ def prepare_clean_df(raw_df, info):
     # Special handling for household income indicator
     if info["code"] == "earn_nt_net":
         try:
-            # Required filters for this specific dataset
             filters = {
-                'estruct': 'NET',      # Net earnings
-                'ecase': 'CPL_CH2_AW100_100',  # Household composition
-                'currency': 'EUR'      # Euro
+                'estruct': 'NET',
+                'ecase': 'CPL_CH2_AW100_100',
+                'currency': 'EUR'
             }
             
             for key, value in filters.items():
                 if key in df.columns:
-                    # Check if the value exists in the column
                     if value in df[key].unique():
                         df = df[df[key] == value]
                     else:
-                        # If the exact value doesn't exist, try to find a close match
                         st.warning(f"Value '{value}' not found in column '{key}'. Available values: {df[key].unique().tolist()}")
-                        # Don't filter if the exact value isn't found
             
             if 'freq' in df.columns:
                 df = df[df['freq'] == 'A']
@@ -358,11 +354,74 @@ def prepare_clean_df(raw_df, info):
             st.error(f"Error processing household income data: {e}")
             return pd.DataFrame()
 
+    # Special handling for fertility rate (demo_find)
+    if info["code"] == "demo_find":
+        try:
+            if 'indic_de' in df.columns and 'indic_de' in info:
+                if info['indic_de'] in df['indic_de'].unique():
+                    df = df[df['indic_de'] == info['indic_de']]
+                else:
+                    st.warning(f"Value '{info['indic_de']}' not found in column 'indic_de'. Available: {df['indic_de'].unique().tolist()}")
+            
+            if 'sex' in df.columns:
+                df = df[df['sex'] == 'T']
+            
+            if 'freq' in df.columns:
+                df = df[df['freq'] == 'A']
+            
+            year_cols = [c for c in df.columns if str(c).isdigit() and int(c) >= 1990]
+            if 'geo' in df.columns and year_cols:
+                melted = pd.melt(df, id_vars=['geo'], value_vars=year_cols, var_name='Év', value_name='Érték')
+                melted['Év'] = melted['Év'].astype(int)
+                melted['Érték'] = pd.to_numeric(melted['Érték'], errors='coerce')
+                return melted.groupby(['geo', 'Év'], as_index=False)['Érték'].mean()
+        except Exception as e:
+            st.error(f"Error processing fertility data: {e}")
+            return pd.DataFrame()
+
+    # Special handling for healthy life years (hlth_hlye)
+    if info["code"] == "hlth_hlye":
+        try:
+            # Filter by sex = T (Total)
+            if 'sex' in df.columns and 'sex' in info:
+                if info['sex'] in df['sex'].unique():
+                    df = df[df['sex'] == info['sex']]
+                else:
+                    st.warning(f"Value '{info['sex']}' not found in column 'sex'. Available: {df['sex'].unique().tolist()}")
+            
+            # Filter by hlth_hle = HLY_LE_Y0_PC
+            if 'hlth_hle' in df.columns and 'hlth_hle' in info:
+                if info['hlth_hle'] in df['hlth_hle'].unique():
+                    df = df[df['hlth_hle'] == info['hlth_hle']]
+                else:
+                    st.warning(f"Value '{info['hlth_hle']}' not found in column 'hlth_hle'. Available: {df['hlth_hle'].unique().tolist()}")
+            
+            # Filter by unit = YR
+            if 'unit' in df.columns and 'unit' in info:
+                if info['unit'] in df['unit'].unique():
+                    df = df[df['unit'] == info['unit']]
+                else:
+                    st.warning(f"Value '{info['unit']}' not found in column 'unit'. Available: {df['unit'].unique().tolist()}")
+            
+            if 'freq' in df.columns:
+                df = df[df['freq'] == 'A']
+            
+            year_cols = [c for c in df.columns if str(c).isdigit() and int(c) >= 1990]
+            if 'geo' in df.columns and year_cols:
+                melted = pd.melt(df, id_vars=['geo'], value_vars=year_cols, var_name='Év', value_name='Érték')
+                melted['Év'] = melted['Év'].astype(int)
+                melted['Érték'] = pd.to_numeric(melted['Érték'], errors='coerce')
+                return melted.groupby(['geo', 'Év'], as_index=False)['Érték'].mean()
+        except Exception as e:
+            st.error(f"Error processing healthy life years data: {e}")
+            return pd.DataFrame()
+
     # General filtering for other indicators
-    filter_keys = ['unit', 'na_item', 'coicop', 'age', 'sex', 'sector', 'indi', 'wstatus', 'int_rt', 'icha11_hc', 'icd10', 'cofog99', 'isced11', 'purchase', 'indic_sb']
+    filter_keys = ['unit', 'na_item', 'coicop', 'age', 'sex', 'sector', 'indi', 'wstatus', 'int_rt', 'icha11_hc', 'icd10', 'cofog99', 'isced11', 'purchase', 'indic_sb', 'indic_de', 'hlth_hle']
     for key in filter_keys:
         if key in info and key in df.columns:
-            df = df[df[key] == info[key]]
+            if info[key] in df[key].unique():
+                df = df[df[key] == info[key]]
 
     if 'freq' in df.columns:
         df = df[df['freq'] == 'A']
@@ -407,11 +466,11 @@ if use_indexing:
 # -----------------------------------------------------------------------------
 # FELDOLGOZÁS ÉS MEGJELENÍTÉS (MINDEN MUTATÓ AUTOMATIKUSEN)
 # -----------------------------------------------------------------------------
-indicator_counter = 0  # Counter for unique keys
+indicator_counter = 0
 
 for label, info in INDICATORS.items():
     indicator_counter += 1
-    unique_key_suffix = f"{indicator_counter}_{uuid.uuid4().hex[:6]}"  # Extra uniqueness
+    unique_key_suffix = f"{indicator_counter}_{uuid.uuid4().hex[:6]}"
     
     st.markdown("---")
     st.subheader(f"📊 {label}")
@@ -464,17 +523,13 @@ for label, info in INDICATORS.items():
                 start_rank = raw_dict[valid_years[0]]
                 end_rank = raw_dict[valid_years[-1]]
                 
-                # A kisebb sorszám jelenti a jobb helyezést (1. hely a legjobb)
                 rank_change = start_rank - end_rank
 
                 if rank_change > 0:
-                    # JAVULÁS -> Zöld
                     return f"<span style='color: #16a34a !important; font-weight: bold;'>▲ +{rank_change}</span>"
                 elif rank_change < 0:
-                    # ROMLÁS -> Piros
                     return f"<span style='color: #dc2626 !important; font-weight: bold;'>▼ {rank_change}</span>"
                 else:
-                    # VÁLTOZATLAN -> Fekete
                     return f"<span style='color: #000000 !important; font-weight: bold;'>➔ 0</span>"
             return "-"
 
@@ -606,26 +661,23 @@ for label, info in INDICATORS.items():
 
             st.plotly_chart(grid_fig, use_container_width=True, config=MOBILE_PLOT_CONFIG)
 
-            # --- HELYEZÉSI TÁBLÁZAT SZÍNEZETT VÁLTOZÁS OSZLOPOKKAL ---
+            # --- HELYEZÉSI TÁBLÁZAT ---
             row_eu13_vals = [ranks_dict[y]["eu13"] for y in years_in_range] + [diff_eu13_html]
             row_eu27_vals = [ranks_dict[y]["eu27"] for y in years_in_range] + [diff_eu27_html]
 
             col_names = years_in_range + ["Változás"]
 
-            # Build HTML table manually for proper color rendering
             html_table = '<table class="rank-table">'
             html_table += '<thead><tr><th></th>'
             for col in col_names:
                 html_table += f'<th>{col}</th>'
             html_table += '</tr></thead><tbody>'
 
-            # Row 1: EU13
             html_table += '<tr><td>Régiós helyezés (EU13)</td>'
             for val in row_eu13_vals:
                 html_table += f'<td>{val}</td>'
             html_table += '</tr>'
 
-            # Row 2: EU27
             html_table += '<tr><td>EU helyezés (EU27)</td>'
             for val in row_eu27_vals:
                 html_table += f'<td>{val}</td>'
@@ -642,7 +694,6 @@ for label, info in INDICATORS.items():
                 if available_refs:
                     default_idx = available_refs.index("EU13_AVG") if "EU13_AVG" in available_refs else 0
                     
-                    # Use unique key with counter and UUID for absolute uniqueness
                     ref_country = st.selectbox(
                         "Referencia ország / régió kiválasztása:",
                         options=available_refs,
