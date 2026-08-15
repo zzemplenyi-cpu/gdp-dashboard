@@ -4,6 +4,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import eurostat
+import uuid
 
 st.set_page_config(
     page_title="AZAKI - Mérlegen az elmúlt 16 év",
@@ -130,7 +131,7 @@ INDICATORS = {
     },
     "Termékenységi ráta": {
         "code": "demo_find",
-        "indi": "TOTFERTRT",
+        "indic_de": "TOTFERRT",
         "desc": "Teljes termékenységi arányszám (gyermek/nő)",
         "higher_is_better": True
     },
@@ -151,6 +152,7 @@ INDICATORS = {
         "code": "hlth_hlye",
         "sex": "T",
         "unit": "YR",
+        "age": "Y_LT1",
         "desc": "Egészségben eltöltött várható élettartam születéskor (évek száma)",
         "higher_is_better": True
     },
@@ -161,9 +163,9 @@ INDICATORS = {
         "desc": "Folyó egészségügyi kiadások a GDP százalékában (%)",
         "higher_is_better": True
     },
-    "Megelőzhető és kezelhető halálozási ráta": {
+    "Megelőzhető és kezelhető halálozások aránya": {
         "code": "hlth_cd_apr",
-        "unit": "NR",
+        "unit": "RT",
         "sex": "T",
         "icd10": "TOTAL",
         "desc": "Elkerülhető és kezelhető halálozások száma 100 000 lakosra vetítve",
@@ -223,25 +225,27 @@ INDICATORS = {
         "desc": "Bruttó állóeszköz-felhalmozás a GDP százalékában (%)",
         "higher_is_better": True
     },
-    "Termelékenység (GDP/foglalkoztatott)": {
+    "Termelékenység (GDP/munkaóra)": {
         "code": "nama_10_lp_ulc",
-        "unit": "I2015",
-        "na_item": "RLPR_PERSON",
-        "desc": "Munkatermelékenység egy foglalkoztatottra vetítve (Index, 2015 = 100%)",
+        "unit": "I10",
+        "na_item": "RLPR_HW",
+        "desc": "Munkatermelékenység egy munkaórára vetítve (Index, 2010 = 100%)",
         "higher_is_better": True
     },
     "Lakásárindex": {
         "code": "prc_hpi_a",
-        "unit": "INX_A",
+        "unit": "I15_A_AVG",
         "purchase": "TOTAL",
         "desc": "Lakásárindex éves átlaga (2015 = 100%)",
         "higher_is_better": True
     },
-    "Lakásépítések száma 1000 lakosra": {
-        "code": "build_ijin_a",
-        "unit": "NR",
-        "indic_sb": "B111",
-        "desc": "Kiadott építési engedélyek / épített lakások száma",
+    "Kiadott építési engedélyek száma": {
+        "code": "sts_cobp_a",
+        "unit": "THS",
+        "cpa2_1": "CPA_F41001",
+        "s_adj": "NSA",
+        "indic_bt": "BPRM_DW",
+        "desc": "Kiadott építési engedélyek éves száma (ezer db)",
         "higher_is_better": True
     },
     "Reál GDP növekedés": {
@@ -321,6 +325,40 @@ def prepare_clean_df(raw_df, info):
     if geo_col:
         df.rename(columns={geo_col[0]: 'geo'}, inplace=True)
 
+    # Special handling for household income indicator
+    if info["code"] == "earn_nt_net":
+        try:
+            # Required filters for this specific dataset
+            filters = {
+                'estruct': 'NET',      # Net earnings
+                'ecase': 'CPL_CH2_AW100_100',  # Household composition
+                'currency': 'EUR'      # Euro
+            }
+            
+            for key, value in filters.items():
+                if key in df.columns:
+                    # Check if the value exists in the column
+                    if value in df[key].unique():
+                        df = df[df[key] == value]
+                    else:
+                        # If the exact value doesn't exist, try to find a close match
+                        st.warning(f"Value '{value}' not found in column '{key}'. Available values: {df[key].unique().tolist()}")
+                        # Don't filter if the exact value isn't found
+            
+            if 'freq' in df.columns:
+                df = df[df['freq'] == 'A']
+            
+            year_cols = [c for c in df.columns if str(c).isdigit() and int(c) >= 1990]
+            if 'geo' in df.columns and year_cols:
+                melted = pd.melt(df, id_vars=['geo'], value_vars=year_cols, var_name='Év', value_name='Érték')
+                melted['Év'] = melted['Év'].astype(int)
+                melted['Érték'] = pd.to_numeric(melted['Érték'], errors='coerce')
+                return melted.groupby(['geo', 'Év'], as_index=False)['Érték'].mean()
+        except Exception as e:
+            st.error(f"Error processing household income data: {e}")
+            return pd.DataFrame()
+
+    # General filtering for other indicators
     filter_keys = ['unit', 'na_item', 'coicop', 'age', 'sex', 'sector', 'indi', 'wstatus', 'int_rt', 'icha11_hc', 'icd10', 'cofog99', 'isced11', 'purchase', 'indic_sb']
     for key in filter_keys:
         if key in info and key in df.columns:
@@ -369,7 +407,12 @@ if use_indexing:
 # -----------------------------------------------------------------------------
 # FELDOLGOZÁS ÉS MEGJELENÍTÉS (MINDEN MUTATÓ AUTOMATIKUSEN)
 # -----------------------------------------------------------------------------
+indicator_counter = 0  # Counter for unique keys
+
 for label, info in INDICATORS.items():
+    indicator_counter += 1
+    unique_key_suffix = f"{indicator_counter}_{uuid.uuid4().hex[:6]}"  # Extra uniqueness
+    
     st.markdown("---")
     st.subheader(f"📊 {label}")
     st.markdown(f"<div style='color: #000000; font-size: 14px; margin-bottom: 10px;'>{info['desc']}</div>", unsafe_allow_html=True)
@@ -535,27 +578,25 @@ for label, info in INDICATORS.items():
                 margin=dict(b=10, t=50, l=10, r=10),
                 updatemenus=[
                     dict(
-                        type="buttons",
-                        direction="right",
-                        active=0,
-                        x=0.0,
-                        y=1.15,
-                        xanchor="left",
-                        yanchor="top",
-                        font=dict(color="#000000", size=12),
-                        buttons=[
+                        buttons=list([
                             dict(
-                                label="Címkék: KI", 
-                                method="restyle", 
-                                args=[{"mode": "lines+markers"}]
+                                label="Címkék: KI",
+                                method="restyle",
+                                args=[{"mode": "lines+markers"}],
                             ),
                             dict(
-                                label="Címkék: BE", 
-                                method="restyle", 
-                                args=[{"mode": "lines+markers+text"}]
+                                label="Címkék: BE",
+                                method="restyle",
+                                args=[{"mode": "lines+markers+text"}],
                             )
-                        ],
+                        ]),
+                        direction="right",
                         showactive=True,
+                        x=0.0,
+                        xanchor="left",
+                        y=1.15,
+                        yanchor="top",
+                        font=dict(color="#000000"),
                         bgcolor="#f0f0f0",
                         bordercolor="#cccccc",
                         borderwidth=1
@@ -601,12 +642,13 @@ for label, info in INDICATORS.items():
                 if available_refs:
                     default_idx = available_refs.index("EU13_AVG") if "EU13_AVG" in available_refs else 0
                     
+                    # Use unique key with counter and UUID for absolute uniqueness
                     ref_country = st.selectbox(
                         "Referencia ország / régió kiválasztása:",
                         options=available_refs,
                         index=default_idx,
                         format_func=lambda x: EU_COUNTRIES.get(x, x),
-                        key=f"gap_ref_{info['code']}"
+                        key=f"gap_ref_{info['code']}_{unique_key_suffix}"
                     )
 
                     if ref_country:
@@ -640,7 +682,7 @@ for label, info in INDICATORS.items():
             c1, c2, c3, c4, c5 = st.columns([1.8, 1.8, 2.5, 2.0, 2.0])
             
             with c1:
-                if st.button(f"🔗 Beágyazási kód", key=f"embed_{info['code']}"):
+                if st.button(f"🔗 Beágyazási kód", key=f"embed_{info['code']}_{unique_key_suffix}"):
                     show_embed_modal(label, info['code'])
             
             with c2:
@@ -649,7 +691,7 @@ for label, info in INDICATORS.items():
                     data=filtered_df.to_csv(index=False).encode('utf-8'),
                     file_name=f"{info['code']}_azaki_eu.csv",
                     mime="text/csv",
-                    key=f"dl_{info['code']}"
+                    key=f"dl_{info['code']}_{unique_key_suffix}"
                 )
 
             with c3:
@@ -678,9 +720,19 @@ st.markdown("<div style='color: #000000 !important; font-size: 14px; margin-bott
 
 col_m1, col_m2 = st.columns(2)
 with col_m1:
-    ind1 = st.selectbox("1. Mutató (Bal Y tengely):", options=list(INDICATORS.keys()), index=0)
+    ind1 = st.selectbox(
+        "1. Mutató (Bal Y tengely):", 
+        options=list(INDICATORS.keys()), 
+        index=0,
+        key="dual_ind1"
+    )
 with col_m2:
-    ind2 = st.selectbox("2. Mutató (Jobb Y tengely):", options=list(INDICATORS.keys()), index=12)
+    ind2 = st.selectbox(
+        "2. Mutató (Jobb Y tengely):", 
+        options=list(INDICATORS.keys()), 
+        index=12,
+        key="dual_ind2"
+    )
 
 if ind1 and ind2:
     raw1 = load_eurostat_dataset(INDICATORS[ind1]["code"])
