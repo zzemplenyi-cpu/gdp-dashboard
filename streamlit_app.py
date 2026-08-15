@@ -5,7 +5,6 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import eurostat
 import uuid
-import time
 
 st.set_page_config(
     page_title="AZAKI - Mérlegen az elmúlt 16 év",
@@ -15,42 +14,43 @@ st.set_page_config(
 )
 
 # -----------------------------------------------------------------------------
-# GLOBAL CSS - FIXED FOR MOBILE (LIGHT BACKGROUND)
+# GLOBAL CSS - FIXED FOR MOBILE (WHITE BACKGROUND)
 # -----------------------------------------------------------------------------
 st.markdown("""
 <style>
-    /* Force light background for mobile */
-    .stApp {
+    /* Force white background everywhere */
+    .stApp, .main, .block-container, div[data-testid="stVerticalBlock"] {
         background-color: #ffffff !important;
     }
     
-    /* Minden Streamlit szöveges elem és caption feketére kényszerítése */
+    /* Force all text to be black */
     html, body, p, div, span, label, h1, h2, h3, h4, h5, h6, 
     .stCaption, [data-testid="stCaptionContainer"], small, .stMarkdown p,
-    .stMarkdown, .stText, .stSelectbox, .stMultiSelect, .stSlider {
+    .stMarkdown, .stText, .stSelectbox label, .stMultiSelect label, 
+    .stSlider label, .stCheckbox label, .stRadio label {
         color: #000000 !important;
-        background-color: #ffffff !important;
     }
     
-    /* Fix sidebar on mobile */
-    .css-1d391kg, .css-1lcbmhc, .css-1adrfps, section[data-testid="stSidebar"] {
+    /* Sidebar white background */
+    section[data-testid="stSidebar"] {
         background-color: #ffffff !important;
     }
-    
-    /* Fix all containers */
-    .st-bb, .st-bc, .st-bd, .st-be, .st-bf, .st-bg, .st-bh, .st-bi {
-        background-color: #ffffff !important;
+    section[data-testid="stSidebar"] * {
+        color: #000000 !important;
     }
     
-    /* Fix expander background */
+    /* Expander white background */
     .streamlit-expanderHeader, .streamlit-expanderContent {
         background-color: #ffffff !important;
         color: #000000 !important;
     }
     
-    /* Fix selectbox dropdown */
+    /* Selectbox white background */
     .stSelectbox div[data-baseweb="select"] {
         background-color: #ffffff !important;
+    }
+    .stSelectbox div[data-baseweb="select"] * {
+        color: #000000 !important;
     }
     
     /* Táblázat stílusok */
@@ -101,19 +101,26 @@ st.markdown("""
         font-size: 12px;
     }
     
-    /* Fix for Plotly charts on mobile */
-    .js-plotly-plot .plotly .main-svg {
-        background-color: #ffffff !important;
+    /* Fix button text */
+    .stButton button {
+        color: #000000 !important;
     }
     
-    /* Fix for mobile viewport */
+    /* Fix download button */
+    .stDownloadButton button {
+        color: #000000 !important;
+    }
+    
+    /* Mobile specific fixes */
     @media (max-width: 768px) {
-        .stApp {
-            padding: 0 !important;
-        }
-        .main > div {
+        .main .block-container {
             padding-left: 1rem !important;
             padding-right: 1rem !important;
+            padding-top: 1rem !important;
+        }
+        /* Hide Streamlit's default padding on mobile */
+        .stApp {
+            padding: 0 !important;
         }
     }
 </style>
@@ -122,7 +129,7 @@ st.markdown("""
 st.title("Mérlegen az elmúlt 16 év: Magyarország és a régió EU-s felzárkózása")
 
 st.markdown("""
-<div style="color: #000000 !important; font-size: 14px; line-height: 1.5; margin-bottom: 20px; background-color: #ffffff; padding: 10px;">
+<div style="color: #000000 !important; font-size: 14px; line-height: 1.5; margin-bottom: 20px;">
     Az Orbán Viktor nevével fémjelzett elmúlt 16 éves korszakot egyesek az ország történetének egyik legsikeresebb időszakaként festik le, míg mások inkább történelmi léptékű kihagyott lehetőségként látják, és az EU-pénzek által nyújtott hátszél ellenére folyamatosan romló közszolgáltatásról és nem működő országról beszélnek, ahol a régió többi országa messze elhúzott mellettünk. Arra nem tennék kísérletet, hogy a különböző politikai oldalak között ítéletet hirdessek, de arra igen, hogy ábrák sokaságával illusztráljam az ország teljesítményét, az EU átlaga és a 2004 után csatlakozott 13 ország átlagához képest, így a kedves olvasó mindezek ismeretében jobban, adat alapon hozhat ítéletet.
     <br><br>
     <span style="color: #000000 !important; font-weight: bold; font-size: 13px;">Adatforrás: Eurostat | Elemzés és vizualizáció: azaki.eu</span>
@@ -137,8 +144,7 @@ MOBILE_PLOT_CONFIG = {
     'scrollZoom': False,
     'displayModeBar': False,
     'showAxisDragHandles': False,
-    'responsive': True,
-    'staticPlot': False,
+    'responsive': True
 }
 
 # -----------------------------------------------------------------------------
@@ -497,25 +503,8 @@ if use_indexing:
     base_year = st.sidebar.number_input("Bázisév (100%):", min_value=year_range[0], max_value=year_range[1], value=year_range[0])
 
 # -----------------------------------------------------------------------------
-# FELDOLGOZÁS ÉS MEGJELENÍTÉS - LAZY LOADING
+# FELDOLGOZÁS ÉS MEGJELENÍTÉS (MINDEN MUTATÓ AUTOMATIKUSEN)
 # -----------------------------------------------------------------------------
-
-# Create a session state variable to track which indicators have been loaded
-if 'loaded_indicators' not in st.session_state:
-    st.session_state.loaded_indicators = set()
-
-# Add a "Load All" button in sidebar
-st.sidebar.markdown("---")
-if st.sidebar.button("📊 Összes ábra betöltése", use_container_width=True):
-    st.session_state.load_all = True
-else:
-    if 'load_all' not in st.session_state:
-        st.session_state.load_all = False
-
-# Display a progress indicator
-st.sidebar.markdown("---")
-st.sidebar.info("💡 Az ábrák betöltése igény szerint történik. Kattints a 'Betöltés' gombra minden ábra alatt.")
-
 indicator_counter = 0
 
 for label, info in INDICATORS.items():
@@ -525,33 +514,10 @@ for label, info in INDICATORS.items():
     st.markdown("---")
     st.subheader(f"📊 {label}")
     st.markdown(f"<div style='color: #000000; font-size: 14px; margin-bottom: 10px;'>{info['desc']}</div>", unsafe_allow_html=True)
-    
-    # Check if this indicator should be loaded
-    load_key = f"load_{info['code']}"
-    should_load = st.session_state.load_all or (load_key in st.session_state and st.session_state[load_key])
-    
-    # Button to load this indicator
-    col_btn, col_status = st.columns([1, 4])
-    with col_btn:
-        if not should_load:
-            if st.button(f"📊 Betöltés", key=f"btn_{info['code']}_{unique_key_suffix}"):
-                st.session_state[load_key] = True
-                st.rerun()
-    
-    if should_load:
-        with col_status:
-            st.markdown("🔄 *Betöltés folyamatban...*")
-        
-        with st.spinner(f"Adatok betöltése ({label})..."):
-            raw_df = load_eurostat_dataset(info["code"])
-            all_countries_df = prepare_clean_df(raw_df, info)
-        
-        # Mark as loaded
-        st.session_state.loaded_indicators.add(info['code'])
-    else:
-        with col_status:
-            st.markdown("⏳ *Kattints a 'Betöltés' gombra az ábra megjelenítéséhez*")
-        continue
+
+    with st.spinner(f"Adatok betöltése ({label})..."):
+        raw_df = load_eurostat_dataset(info["code"])
+        all_countries_df = prepare_clean_df(raw_df, info)
 
     if not all_countries_df.empty:
         # --- HELYEZÉSEK SZÁMÍTÁSA MAGYARORSZÁGNAK ---
@@ -678,7 +644,7 @@ for label, info in INDICATORS.items():
                 grid_fig.add_trace(tr)
 
             grid_fig.update_layout(
-                height=420,
+                height=460,
                 hovermode="x unified",
                 font=dict(color="#000000"),
                 title=dict(font=dict(color="#000000")),
