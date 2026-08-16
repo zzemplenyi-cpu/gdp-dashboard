@@ -53,6 +53,14 @@ st.markdown("""
         color: #000000 !important;
     }
     
+    /* Dialog/Modal white background */
+    div[role="dialog"] {
+        background-color: #ffffff !important;
+    }
+    div[role="dialog"] * {
+        color: #000000 !important;
+    }
+    
     /* Táblázat stílusok */
     .rank-table {
         width: 100%;
@@ -104,11 +112,11 @@ st.markdown("""
     /* Fix button text */
     .stButton button {
         color: #000000 !important;
+        background-color: #f0f0f0 !important;
+        border: 1px solid #cccccc !important;
     }
-    
-    /* Fix download button */
-    .stDownloadButton button {
-        color: #000000 !important;
+    .stButton button:hover {
+        background-color: #e0e0e0 !important;
     }
     
     /* Mobile specific fixes */
@@ -130,7 +138,7 @@ st.title("Mérlegen az elmúlt 16 év: Magyarország és a régió EU-s felzárk
 
 st.markdown("""
 <div style="color: #000000 !important; font-size: 14px; line-height: 1.5; margin-bottom: 20px;">
-    Az Orbán Viktor nevével fémjelzett elmúlt 16 éves korszakot egyesek az ország történetének egyik legsikeresebb időszakaként festik le, míg mások inkább történelmi léptékű kihagyott lehetőségként látják, és az EU-pénzek által nyújtott hátszél ellenére folyamatosan romló közszolgáltatásról és nem működő országról beszélnek, ahol a régió többi országa messze elhúzott mellettünk. Arra nem tennék kísérletet, hogy a különböző politikai oldalak között ítéletet hirdessek, de arra igen, hogy ábrák sokaságával illusztráljam az ország teljesítményét, az EU átlaga és a 2004 után csatlakozott 13 ország átlagához képest, így a kedves olvasó mindezek ismeretében jobban, adat alapon hozhat ítéletet.
+    Az Orbán Viktor nevével fémjelzett elmúlt 16 éves korszakot egyesek az ország történetének egyik legsikeresebb aranykoraként festik le, míg mások inkább történelmi léptékű kihagyott lehetőségként látják, ahol az EU-pénzek által nyújtott hátszél ellenére a régió többi országa messze elhúzott mellettünk. Mivel a holdblog "BB tengely" cikksorozatán kívül nem találtam olyan a témával foglalkozó írásokat mely a régió többi országához hasonlítaná hazánk teljesítményét, így egy hétvégi vibekóding projet erejéig magam tettem kísérletet arra, hogy ábrák sokaságával illusztráljam az ország teljesítményét, az EU átlaga és a 2004 után csatlakozott 13 ország átlagához képest. 
     <br><br>
     <span style="color: #000000 !important; font-weight: bold; font-size: 13px;">Adatforrás: Eurostat | Elemzés és vizualizáció: azaki.eu</span>
 </div>
@@ -190,12 +198,7 @@ INDICATORS = {
         "desc": "Teljes termékenységi arányszám (gyermek/nő)",
         "higher_is_better": True
     },
-    "Népesség": {
-        "code": "demo_gind",
-        "indi": "AVG",
-        "desc": "Átlagos éves népességszám (fő)",
-        "higher_is_better": True
-    },
+    
     "Várható élettartam": {
         "code": "demo_mlexpec",
         "sex": "T",
@@ -309,7 +312,13 @@ INDICATORS = {
         "na_item": "B1GQ",
         "desc": "Előző évhez képesti reál GDP változás %-ban",
         "higher_is_better": True
-    }
+    },
+    "Népesség": {
+            "code": "demo_gind",
+            "indi": "AVG",
+            "desc": "Átlagos éves népességszám (fő)",
+            "higher_is_better": True
+        }
 }
 
 EU13_CODES = ["CY", "CZ", "EE", "PL", "LV", "LT", "HU", "MT", "SK", "SI", "BG", "RO", "HR"]
@@ -355,6 +364,24 @@ SORT_ORDER = ["Magyarország", "EU27 Átlag", "EU13 Átlag", "Lengyelország", "
 # -----------------------------------------------------------------------------
 @st.dialog("🔗 Ábra beágyazása a weboldaladra / cikkedbe")
 def show_embed_modal(label_text, code_key):
+    # Add white background to the dialog content
+    st.markdown("""
+    <style>
+        div[role="dialog"] {
+            background-color: #ffffff !important;
+        }
+        div[role="dialog"] * {
+            color: #000000 !important;
+        }
+        .stCodeBlock {
+            background-color: #f5f5f5 !important;
+        }
+        .stCodeBlock code {
+            color: #000000 !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+    
     st.write("Másold ki az alábbi HTML kódot, és illeszd be a tartalomkezelődbe (WordPress, CMS, HTML):")
     embed_code = f'<iframe src="https://azaki.eu?indicator={code_key}" width="100%" height="820" frameborder="0" scrolling="no"></iframe>\n<p style="font-size: 12px; color: #000000;">Forrás: <a href="https://azaki.eu" target="_blank" style="color:#000000;">azaki.eu</a> / Eurostat</p>'
     st.code(embed_code, language="html")
@@ -481,7 +508,7 @@ def prepare_clean_df(raw_df, info):
 # -----------------------------------------------------------------------------
 # SIDEBAR BEÁLLÍTÁSOK
 # -----------------------------------------------------------------------------
-st.sidebar.header("⚙️ Globális Beállítások")
+st.sidebar.header("⚙️ Összehasonlítandó országok és időszak beállítása")
 
 default_countries = ["HU", "EU27_2020", "EU13_AVG", "PL", "RO"]
 
@@ -774,33 +801,19 @@ for label, info in INDICATORS.items():
                         )
                         st.plotly_chart(gap_fig, use_container_width=True, config=MOBILE_PLOT_CONFIG)
 
-            # --- AKCIÓGOMBOK ---
-            c1, c2, c3, c4, c5 = st.columns([1.8, 1.8, 2.5, 2.0, 2.0])
+            # --- AKCIÓGOMBOK (Csak Beágyazási kód) ---
+            # Only keep the embed button, remove CSV and Adattábla
+            col1, col2, col3 = st.columns([2, 4, 4])
             
-            with c1:
+            with col1:
                 if st.button(f"🔗 Beágyazási kód", key=f"embed_{info['code']}_{unique_key_suffix}"):
                     show_embed_modal(label, info['code'])
             
-            with c2:
-                st.download_button(
-                    label="📥 CSV letöltése",
-                    data=filtered_df.to_csv(index=False).encode('utf-8'),
-                    file_name=f"{info['code']}_azaki_eu.csv",
-                    mime="text/csv",
-                    key=f"dl_{info['code']}_{unique_key_suffix}"
-                )
-
-            with c3:
+            with col2:
                 st.markdown("<div style='padding-top: 6px; font-size: 12px; color: #000000 !important; font-weight: bold;'>Adatforrás: <b>Eurostat</b></div>", unsafe_allow_html=True)
 
-            with c4:
+            with col3:
                 st.markdown("<div style='padding-top: 6px; font-size: 13px; color: #000000 !important; text-align: right; font-weight: bold;'><b>AZAKI.EU</b></div>", unsafe_allow_html=True)
-
-            with c5:
-                with st.popover("📄 Adattábla"):
-                    pivoted = filtered_df.pivot(index='Év', columns='Ország', values='Érték').sort_index(ascending=False)
-                    pivoted_cols = [c for c in ordered_countries if c in pivoted.columns]
-                    st.dataframe(pivoted[pivoted_cols], use_container_width=True)
 
         else:
             st.warning("A kiválasztott szűrők alapján nincs elérhető adat ehhez a mutatóhoz.")
