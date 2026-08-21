@@ -241,6 +241,13 @@ INDICATORS = {
         "desc": "Teljes termékenységi arányszám (gyermek/nő)",
         "higher_is_better": True
     },
+    "Élveszületések száma 100 ezer lakosra": {
+        "code": "demo_gind",
+        "indic_de": "LBIRTH",
+        "calc_per_100k": True,
+        "desc": "Élveszületések száma 100 000 lakosra vetítve",
+        "higher_is_better": True
+    },
     "Várható élettartam": {
         "code": "demo_mlexpec",
         "sex": "T",
@@ -271,12 +278,46 @@ INDICATORS = {
         "desc": "Elkerülhető és kezelhető halálozások száma 100 000 lakosra vetítve",
         "higher_is_better": False
     },
+    "Többlethalálozás (Excess Mortality)": {
+        "code": "demo_mexrt",
+        "unit": "PC",
+        "desc": "Többlethalálozási ráta a 2016-2019-es bázisidőszak átlagához képest (%)",
+        "higher_is_better": False
+    },
     "Oktatási kiadások a GDP %-ában": {
         "code": "gov_10a_exp",
         "unit": "PC_GDP",
         "cofog99": "GF09",
         "sector": "S13",
+        "na_item": "TE",
         "desc": "Kormányzati oktatási kiadások a GDP százalékában (%)",
+        "higher_is_better": True
+    },
+    "Alapfokú oktatási kiadások a GDP %-ában": {
+        "code": "gov_10a_exp",
+        "unit": "PC_GDP",
+        "cofog99": "GF0901",
+        "sector": "S13",
+        "na_item": "TE",
+        "desc": "Kormányzati alapfokú oktatási kiadások (GF0901) a GDP százalékában (%)",
+        "higher_is_better": True
+    },
+    "Középfokú oktatási kiadások a GDP %-ában": {
+        "code": "gov_10a_exp",
+        "unit": "PC_GDP",
+        "cofog99": "GF0902",
+        "sector": "S13",
+        "na_item": "TE",
+        "desc": "Kormányzati középfokú oktatási kiadások (GF0902) a GDP százalékában (%)",
+        "higher_is_better": True
+    },
+    "Felsőfokú oktatási kiadások a GDP %-ában": {
+        "code": "gov_10a_exp",
+        "unit": "PC_GDP",
+        "cofog99": "GF0904",
+        "sector": "S13",
+        "na_item": "TE",
+        "desc": "Kormányzati felsőfokú oktatási kiadások (GF0904) a GDP százalékában (%)",
         "higher_is_better": True
     },
     "Felsőfokú végzettségűek aránya": {
@@ -318,6 +359,19 @@ INDICATORS = {
         "desc": "10 éves államkötvények másodlagos piaci hozama (%)",
         "higher_is_better": False
     },
+    "Bankok sajáttőke-arányos megtérülése (ROE)": {
+        "code": "tipsbd40",
+        "unit": "PC",
+        "desc": "Hitelintézetek adózás utáni sajáttőke-arányos megtérülése (Return on Equity, %)",
+        "higher_is_better": True
+    },
+    "Extra-EU27 export aránya a teljes exportból": {
+        "code": "tet00012",
+        "indic_et": "CONT_EXP_EU",
+        "partner": "EXT_EU27_2020",
+        "desc": "Az EU-n kívüli országokba irányuló export aránya a teljes exportból (%)",
+        "higher_is_better": True
+    },
     "Beruházási ráta": {
         "code": "nama_10_gdp",
         "unit": "PC_GDP",
@@ -339,13 +393,14 @@ INDICATORS = {
         "desc": "Lakásárindex éves átlaga (2015 = 100%)",
         "higher_is_better": True
     },
-    "Kiadott építési engedélyek száma": {
+    "Kiadott építési engedélyek száma 100 ezer lakosra": {
         "code": "sts_cobp_a",
         "unit": "THS",
         "cpa2_1": "CPA_F41001",
         "s_adj": "NSA",
         "indic_bt": "BPRM_DW",
-        "desc": "Kiadott építési engedélyek éves száma (ezer db)",
+        "calc_per_100k": True,
+        "desc": "Kiadott építési engedélyek száma 100 000 lakosra vetítve (darab)",
         "higher_is_better": True
     },
     "Reál GDP növekedés": {
@@ -357,7 +412,7 @@ INDICATORS = {
     },
     "Népesség": {
         "code": "demo_gind",
-        "indi": "AVG",
+        "indic_de": "AVG",
         "desc": "Átlagos éves népességszám (fő)",
         "higher_is_better": True
     }
@@ -448,6 +503,10 @@ def prepare_clean_df(raw_df, info):
     if geo_col:
         df.rename(columns={geo_col[0]: 'geo'}, inplace=True)
 
+    # Convert Eurostat code for bank ROE EU average
+    if info["code"] == "tipsbd40":
+        df['geo'] = df['geo'].replace({'EU': 'EU27_2020'})
+
     if info["code"] == "earn_nt_net":
         try:
             filters = {'estruct': 'NET', 'ecase': 'CPL_CH2_AW100_100', 'currency': 'EUR'}
@@ -482,7 +541,7 @@ def prepare_clean_df(raw_df, info):
         except Exception:
             return pd.DataFrame()
 
-    filter_keys = ['unit', 'na_item', 'coicop', 'age', 'sex', 'sector', 'indi', 'wstatus', 'int_rt', 'icha11_hc', 'icd10', 'cofog99', 'isced11', 'purchase', 'indic_sb', 'indic_de', 'hlth_hle']
+    filter_keys = ['unit', 'na_item', 'coicop', 'age', 'sex', 'sector', 'indi', 'wstatus', 'int_rt', 'icha11_hc', 'icd10', 'cofog99', 'isced11', 'purchase', 'indic_sb', 'indic_de', 'hlth_hle', 'partner', 'stk_flow', 'indic_et']
     for key in filter_keys:
         if key in info and key in df.columns and info[key] in df[key].unique():
             df = df[df[key] == info[key]]
@@ -494,13 +553,40 @@ def prepare_clean_df(raw_df, info):
     if 'sector2' in df.columns:
         df = df[df['sector2'] == 'S1']
 
+    # Process monthly datasets (e.g., demo_mexrt)
+    monthly_cols = [c for c in df.columns if 'M' in str(c) and str(c)[:4].isdigit() and int(str(c)[:4]) >= 1990]
+    if monthly_cols and 'geo' in df.columns:
+        melted_m = pd.melt(df, id_vars=['geo'], value_vars=monthly_cols, var_name='Month', value_name='Érték')
+        melted_m['Év'] = melted_m['Month'].apply(lambda x: int(str(x)[:4]))
+        melted_m['Érték'] = pd.to_numeric(melted_m['Érték'], errors='coerce')
+        return melted_m.groupby(['geo', 'Év'], as_index=False)['Érték'].mean()
+
     year_cols = [c for c in df.columns if str(c).isdigit() and int(c) >= 1990]
     
     if 'geo' in df.columns and year_cols:
         melted = pd.melt(df, id_vars=['geo'], value_vars=year_cols, var_name='Év', value_name='Érték')
         melted['Év'] = melted['Év'].astype(int)
         melted['Érték'] = pd.to_numeric(melted['Érték'], errors='coerce')
-        return melted.groupby(['geo', 'Év'], as_index=False)['Érték'].mean()
+        
+        cleaned_df = melted.groupby(['geo', 'Év'], as_index=False)['Érték'].mean()
+
+        # DYNAMIC PER 100K POPULATION CALCULATION
+        if info.get("calc_per_100k", False):
+            pop_raw = load_eurostat_dataset("demo_gind")
+            pop_df = prepare_clean_df(pop_raw, INDICATORS["Népesség"])
+            if not pop_df.empty:
+                merged = pd.merge(cleaned_df, pop_df, on=['geo', 'Év'], suffixes=('', '_pop'))
+                
+                # If unit was in thousands (e.g. THS in building permits), adjust multiplier
+                multiplier = 100000.0
+                if info.get("unit") == "THS":
+                    multiplier = 100000.0 * 1000.0
+
+                merged['Érték'] = (merged['Érték'] / merged['Érték_pop']) * multiplier
+                return merged[['geo', 'Év', 'Érték']].dropna()
+
+        return cleaned_df
+
     return pd.DataFrame()
 
 # -----------------------------------------------------------------------------
@@ -623,8 +709,7 @@ for label, info in INDICATORS.items():
                 text='Címke_Abs',
                 category_orders={'Ország': ordered_countries},
                 markers=True,
-                template="plotly_white",
-                labels={'Absolute_Érték': 'Érték'}
+                template="plotly_white"
             )
 
             fig_idx = px.line(
@@ -635,8 +720,7 @@ for label, info in INDICATORS.items():
                 text='Címke_Idx',
                 category_orders={'Ország': ordered_countries},
                 markers=True,
-                template="plotly_white",
-                labels={'Indexed_Érték': f'Index ({base_year} = 100%)'}
+                template="plotly_white"
             )
 
             grid_fig = go.Figure()
@@ -682,6 +766,15 @@ for label, info in INDICATORS.items():
             n_traces = len(fig_abs.data)
 
             # CLEANED & EXPANDED MOBILE-FRIENDLY LAYOUT
+            yaxis_kwargs = dict(
+                fixedrange=True,
+                title=dict(text="", font=dict(color="#000000")),
+                tickfont=dict(color="#000000"),
+                gridcolor='#e0e0e0',
+            )
+            if label == "Költségvetési hiány a GDP %-ában":
+                yaxis_kwargs["autorange"] = "reversed"
+
             grid_fig.update_layout(
                 height=520,
                 hovermode="x unified",
@@ -697,13 +790,7 @@ for label, info in INDICATORS.items():
                     tickfont=dict(color="#000000", size=10),
                     gridcolor='#e0e0e0',
                 ),
-                yaxis=dict(
-                    fixedrange=True,
-                    title=dict(font=dict(color="#000000")),
-                    tickfont=dict(color="#000000"),
-                    gridcolor='#e0e0e0',
-                ),
-                yaxis_title="Érték",
+                yaxis=yaxis_kwargs,
                 legend=dict(
                     orientation="h",
                     yanchor="bottom",
@@ -735,16 +822,14 @@ for label, info in INDICATORS.items():
                                 label="Abszolút",
                                 method="update",
                                 args=[
-                                    {"visible": [True] * n_traces + [False] * n_traces},
-                                    {"yaxis.title.text": "Érték"}
+                                    {"visible": [True] * n_traces + [False] * n_traces}
                                 ],
                             ),
                             dict(
                                 label="Bázisindex",
                                 method="update",
                                 args=[
-                                    {"visible": [False] * n_traces + [True] * n_traces},
-                                    {"yaxis.title.text": f"Index ({base_year} = 100%)"}
+                                    {"visible": [False] * n_traces + [True] * n_traces}
                                 ],
                             )
                         ]
@@ -843,7 +928,6 @@ for label, info in INDICATORS.items():
                             plot_bgcolor='rgba(255,255,255,1)',
                             xaxis=dict(dtick=1, fixedrange=True, tickfont=dict(color="#000000"), title=dict(font=dict(color="#000000")), gridcolor='#e0e0e0'),
                             yaxis=dict(fixedrange=True, tickfont=dict(color="#000000"), title=dict(font=dict(color="#000000")), gridcolor='#e0e0e0'),
-                            yaxis_title="Különbség (pont / %)",
                             height=280,
                             template="plotly_white",
                             margin=dict(t=40, b=20)
@@ -925,12 +1009,9 @@ if ind1 and ind2:
             paper_bgcolor='rgba(255,255,255,1)',
             plot_bgcolor='rgba(255,255,255,1)',
             xaxis=dict(dtick=1, fixedrange=True, tickfont=dict(color="#000000"), title=dict(font=dict(color="#000000")), gridcolor='#e0e0e0'),
-            yaxis=dict(fixedrange=True, tickfont=dict(color="#000000"), title=dict(font=dict(color="#000000")), gridcolor='#e0e0e0'),
-            yaxis2=dict(fixedrange=True, tickfont=dict(color="#000000"), title=dict(font=dict(color="#000000")), gridcolor='#e0e0e0'),
+            yaxis=dict(fixedrange=True, tickfont=dict(color="#000000"), title=dict(text="", font=dict(color="#000000")), gridcolor='#e0e0e0'),
+            yaxis2=dict(fixedrange=True, tickfont=dict(color="#000000"), title=dict(text="", font=dict(color="#000000")), gridcolor='#e0e0e0'),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font=dict(color="#000000"))
         )
-
-        dual_fig.update_yaxes(title_text=ind1, secondary_y=False)
-        dual_fig.update_yaxes(title_text=ind2, secondary_y=True)
 
         st.plotly_chart(dual_fig, use_container_width=True, config=MOBILE_PLOT_CONFIG)
