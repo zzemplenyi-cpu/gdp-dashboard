@@ -35,7 +35,7 @@ components.html(
 )
 
 # -----------------------------------------------------------------------------
-# GLOBAL CSS - WHITE BACKGROUND, RESPONSIVE TABLES & VISIBLE SIDEBAR ICON
+# GLOBAL CSS - STYLING & MOBILE SCROLL FIX
 # -----------------------------------------------------------------------------
 st.markdown("""
 <style>
@@ -60,7 +60,7 @@ st.markdown("""
         color: #000000 !important;
     }
 
-    /* 3. RECOLORED SIDEBAR TOGGLE BUTTON (VISIBILITY ON MOBILE) */
+    /* RECOLORED SIDEBAR TOGGLE BUTTON (VISIBILITY ON MOBILE) */
     button[data-testid="stSidebarCollapseButton"],
     [data-testid="stHeader"] button {
         background-color: #ffffff !important;
@@ -96,7 +96,7 @@ st.markdown("""
         color: #000000 !important;
     }
     
-    /* 2. RESPONSIVE TABLE CONTAINER & STYLES */
+    /* RESPONSIVE TABLE CONTAINER & STYLES */
     .table-container {
         width: 100%;
         overflow-x: auto;
@@ -149,7 +149,15 @@ st.markdown("""
         background-color: #e0e0e0 !important;
     }
     
-    /* Mobile specific fixes */
+    /* MOBILE TOUCH & SCROLL OVER PLOTLY FIX */
+    .js-plotly-plot .plotly .draglayer {
+        pointer-events: none !important;
+    }
+    .js-plotly-plot .plotly .nspdrag, 
+    .js-plotly-plot .plotly .nsewdrag {
+        pointer-events: none !important;
+    }
+
     @media (max-width: 768px) {
         .main .block-container {
             padding-left: 0.5rem !important;
@@ -180,7 +188,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# PLOTLY CONFIG
+# PLOTLY CONFIG - PERMITS PAGE SCROLL ON TOUCH DRAG
 # -----------------------------------------------------------------------------
 MOBILE_PLOT_CONFIG = {
     'scrollZoom': False,
@@ -348,11 +356,11 @@ INDICATORS = {
         "higher_is_better": True
     },
     "Népesség": {
-            "code": "demo_gind",
-            "indi": "AVG",
-            "desc": "Átlagos éves népességszám (fő)",
-            "higher_is_better": True
-        }
+        "code": "demo_gind",
+        "indi": "AVG",
+        "desc": "Átlagos éves népességszám (fő)",
+        "higher_is_better": True
+    }
 }
 
 EU13_CODES = ["CY", "CZ", "EE", "PL", "LV", "LT", "HU", "MT", "SK", "SI", "BG", "RO", "HR"]
@@ -673,20 +681,20 @@ for label, info in INDICATORS.items():
 
             n_traces = len(fig_abs.data)
 
-            # 1. FIXED: SINGLE-CLICK BUTTON TOGGLES IN PLOTLY CONTROL MENU
+            # CLEANED & EXPANDED MOBILE-FRIENDLY LAYOUT
             grid_fig.update_layout(
-                height=460,
+                height=520,
                 hovermode="x unified",
-                font=dict(color="#000000"),
-                title=dict(font=dict(color="#000000")),
+                font=dict(color="#000000", size=11),
                 paper_bgcolor='rgba(255,255,255,1)',
                 plot_bgcolor='rgba(255,255,255,1)',
+                margin=dict(b=30, t=110, l=15, r=15),
                 xaxis=dict(
                     dtick=1, 
                     range=[year_range[0] - 0.5, year_range[1] + 0.5], 
                     fixedrange=True,
-                    title=dict(font=dict(color="#000000")),
-                    tickfont=dict(color="#000000"),
+                    title=dict(text="", font=dict(color="#000000")),
+                    tickfont=dict(color="#000000", size=10),
                     gridcolor='#e0e0e0',
                 ),
                 yaxis=dict(
@@ -697,27 +705,64 @@ for label, info in INDICATORS.items():
                 ),
                 yaxis_title="Érték",
                 legend=dict(
-                    orientation="h", 
-                    yanchor="bottom", 
-                    y=1.02, 
-                    xanchor="right", 
-                    x=1,
-                    font=dict(color="#000000")
+                    orientation="h",
+                    yanchor="bottom",
+                    y=1.01,
+                    xanchor="center",
+                    x=0.5,
+                    font=dict(color="#000000", size=10),
+                    itemwidth=30,
+                    entrywidthmode="pixels",
+                    entrywidth=70
                 ),
-                margin=dict(b=10, t=50, l=10, r=10),
                 updatemenus=[
+                    # LEFT SIDE: Abszolút / Bázisindex Toggle
                     dict(
                         type="buttons",
                         direction="right",
                         showactive=True,
                         x=0.0,
                         xanchor="left",
-                        y=1.15,
-                        yanchor="top",
-                        font=dict(color="#000000"),
+                        y=1.26,
+                        yanchor="bottom",
+                        font=dict(color="#000000", size=10),
                         bgcolor="#f0f0f0",
                         bordercolor="#cccccc",
                         borderwidth=1,
+                        pad=dict(r=2, t=2, b=2, l=2),
+                        buttons=[
+                            dict(
+                                label="Abszolút",
+                                method="update",
+                                args=[
+                                    {"visible": [True] * n_traces + [False] * n_traces},
+                                    {"yaxis.title.text": "Érték"}
+                                ],
+                            ),
+                            dict(
+                                label="Bázisindex",
+                                method="update",
+                                args=[
+                                    {"visible": [False] * n_traces + [True] * n_traces},
+                                    {"yaxis.title.text": f"Index ({base_year} = 100%)"}
+                                ],
+                            )
+                        ]
+                    ),
+                    # RIGHT SIDE: Címkék Toggle
+                    dict(
+                        type="buttons",
+                        direction="right",
+                        showactive=True,
+                        x=1.0,
+                        xanchor="right",
+                        y=1.26,
+                        yanchor="bottom",
+                        font=dict(color="#000000", size=10),
+                        bgcolor="#f0f0f0",
+                        bordercolor="#cccccc",
+                        borderwidth=1,
+                        pad=dict(r=2, t=2, b=2, l=2),
                         buttons=[
                             dict(
                                 label="Címkék: BE",
@@ -730,44 +775,13 @@ for label, info in INDICATORS.items():
                                 args=[{"mode": "lines+markers"}],
                             )
                         ]
-                    ),
-                    dict(
-                        type="buttons",
-                        direction="right",
-                        showactive=True,
-                        x=0.40,
-                        xanchor="left",
-                        y=1.15,
-                        yanchor="top",
-                        font=dict(color="#000000"),
-                        bgcolor="#f0f0f0",
-                        bordercolor="#cccccc",
-                        borderwidth=1,
-                        buttons=[
-                            dict(
-                                label="Abszolút érték",
-                                method="update",
-                                args=[
-                                    {"visible": [True] * n_traces + [False] * n_traces},
-                                    {"yaxis.title.text": "Érték"}
-                                ],
-                            ),
-                            dict(
-                                label=f"Bázisindex (T={base_year})",
-                                method="update",
-                                args=[
-                                    {"visible": [False] * n_traces + [True] * n_traces},
-                                    {"yaxis.title.text": f"Index ({base_year} = 100%)"}
-                                ],
-                            )
-                        ]
                     )
                 ]
             )
 
             st.plotly_chart(grid_fig, use_container_width=True, config=MOBILE_PLOT_CONFIG)
 
-            # 2. FIXED: RESPONSIVE WRAPPED TABLE
+            # RESPONSIVE WRAPPED TABLE
             row_eu13_vals = [ranks_dict[y]["eu13"] for y in years_in_range] + [diff_eu13_html]
             row_eu27_vals = [ranks_dict[y]["eu27"] for y in years_in_range] + [diff_eu27_html]
 
