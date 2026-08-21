@@ -7,12 +7,14 @@ import eurostat
 import uuid
 import streamlit.components.v1 as components
 
-# 2. AUTO-COLLAPSE SIDEBAR ON MOBILE DEVICES USING INITIAL_SIDEBAR_STATE & JS
+# -----------------------------------------------------------------------------
+# APP CONFIGURATION & AUTO-COLLAPSE FOR MOBILE
+# -----------------------------------------------------------------------------
 st.set_page_config(
     page_title="AZAKI - Mérlegen az elmúlt 16 év",
     page_icon="📈",
     layout="wide",
-    initial_sidebar_state="auto"  # Automatically collapses on mobile screens
+    initial_sidebar_state="auto"
 )
 
 # JavaScript snippet to close sidebar automatically on small viewports
@@ -33,14 +35,16 @@ components.html(
 )
 
 # -----------------------------------------------------------------------------
-# GLOBAL CSS - FIXED FOR MOBILE (WHITE BACKGROUND)
+# GLOBAL CSS - WHITE BACKGROUND, RESPONSIVE TABLES & VISIBLE SIDEBAR ICON
 # -----------------------------------------------------------------------------
 st.markdown("""
 <style>
+    /* Force white background everywhere */
     .stApp, .main, .block-container, div[data-testid="stVerticalBlock"] {
         background-color: #ffffff !important;
     }
     
+    /* Force all text to be black */
     html, body, p, div, span, label, h1, h2, h3, h4, h5, h6, 
     .stCaption, [data-testid="stCaptionContainer"], small, .stMarkdown p,
     .stMarkdown, .stText, .stSelectbox label, .stMultiSelect label, 
@@ -48,18 +52,35 @@ st.markdown("""
         color: #000000 !important;
     }
     
+    /* Sidebar white background */
     section[data-testid="stSidebar"] {
         background-color: #ffffff !important;
     }
     section[data-testid="stSidebar"] * {
         color: #000000 !important;
     }
+
+    /* 3. RECOLORED SIDEBAR TOGGLE BUTTON (VISIBILITY ON MOBILE) */
+    button[data-testid="stSidebarCollapseButton"],
+    [data-testid="stHeader"] button {
+        background-color: #ffffff !important;
+        border: 1px solid #cccccc !important;
+        border-radius: 6px !important;
+        box-shadow: 0px 2px 5px rgba(0,0,0,0.2) !important;
+    }
+    button[data-testid="stSidebarCollapseButton"] svg,
+    [data-testid="stHeader"] button svg {
+        color: #000000 !important;
+        fill: #000000 !important;
+    }
     
+    /* Expander white background */
     .streamlit-expanderHeader, .streamlit-expanderContent {
         background-color: #ffffff !important;
         color: #000000 !important;
     }
     
+    /* Selectbox white background */
     .stSelectbox div[data-baseweb="select"] {
         background-color: #ffffff !important;
     }
@@ -67,6 +88,7 @@ st.markdown("""
         color: #000000 !important;
     }
     
+    /* Dialog/Modal white background */
     div[role="dialog"] {
         background-color: #ffffff !important;
     }
@@ -74,53 +96,50 @@ st.markdown("""
         color: #000000 !important;
     }
     
+    /* 2. RESPONSIVE TABLE CONTAINER & STYLES */
+    .table-container {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin-bottom: 12px;
+    }
     .rank-table {
         width: 100%;
         border-collapse: collapse;
         font-family: sans-serif;
-        margin-top: -15px;
-        margin-bottom: 12px;
+        margin-top: 0px;
         text-align: center;
         background-color: #ffffff !important;
+        font-size: 12px;
     }
     .rank-table th, .rank-table td {
         border: 1px solid #cbd5e1;
-        padding: 5px 2px;
+        padding: 4px 3px;
         text-align: center;
         color: #000000 !important;
         background-color: #ffffff !important;
+        white-space: nowrap;
     }
     .rank-table th {
         background-color: #f1f5f9 !important;
         font-weight: 600;
-        font-size: 12px;
     }
     .rank-table td:first-child, .rank-table th:first-child {
         text-align: left;
         font-weight: bold;
         background-color: #e2e8f0 !important;
-        white-space: nowrap;
         padding-left: 8px;
         padding-right: 8px;
     }
     .rank-table td:last-child, .rank-table th:last-child {
         background-color: #f8fafc !important;
-        min-width: 75px;
+        min-width: 65px;
     }
     .rank-table td:last-child span {
         font-weight: bold;
     }
-    .rank-table td:last-child {
-        font-size: 15px;
-    }
-    .rank-table span {
-        display: inline-block;
-    }
-    .source-text {
-        color: #000000 !important;
-        font-size: 12px;
-    }
     
+    /* Button Styles */
     .stButton button {
         color: #000000 !important;
         background-color: #f0f0f0 !important;
@@ -130,14 +149,21 @@ st.markdown("""
         background-color: #e0e0e0 !important;
     }
     
+    /* Mobile specific fixes */
     @media (max-width: 768px) {
         .main .block-container {
-            padding-left: 1rem !important;
-            padding-right: 1rem !important;
+            padding-left: 0.5rem !important;
+            padding-right: 0.5rem !important;
             padding-top: 1rem !important;
         }
         .stApp {
             padding: 0 !important;
+        }
+        .rank-table {
+            font-size: 10px;
+        }
+        .rank-table th, .rank-table td {
+            padding: 3px 1px;
         }
     }
 </style>
@@ -153,9 +179,8 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-
 # -----------------------------------------------------------------------------
-# 1. PLOTLY MOBILBARÁT BEÁLLÍTÁSOK (ALLOW PAGE SCROLL ON TOUCH & DRAG)
+# PLOTLY CONFIG
 # -----------------------------------------------------------------------------
 MOBILE_PLOT_CONFIG = {
     'scrollZoom': False,
@@ -166,7 +191,7 @@ MOBILE_PLOT_CONFIG = {
 }
 
 # -----------------------------------------------------------------------------
-# MUTATÓK ÉS METAADATOK (21 MUTATÓ)
+# INDICATORS & METADATA
 # -----------------------------------------------------------------------------
 INDICATORS = {
     "GDP egy főre (PPP)": {
@@ -369,7 +394,7 @@ EU_COUNTRIES = {
 SORT_ORDER = ["Magyarország", "EU27 Átlag", "EU13 Átlag", "Lengyelország", "Románia"]
 
 # -----------------------------------------------------------------------------
-# EMBED DIALOGUS
+# EMBED DIALOG
 # -----------------------------------------------------------------------------
 @st.dialog("🔗 Ábra beágyazása a weboldaladra / cikkedbe")
 def show_embed_modal(label_text, code_key):
@@ -396,7 +421,7 @@ def show_embed_modal(label_text, code_key):
     st.info("💡 A beágyazott grafikon megőrzi az interaktivitását, a helyezési táblázatot és az akciógombokat is!")
 
 # -----------------------------------------------------------------------------
-# ADATLETÖLTÉS & CACHING
+# DATA LOADING & PREPARATION
 # -----------------------------------------------------------------------------
 @st.cache_data(ttl=3600*24)
 def load_eurostat_dataset(code):
@@ -417,55 +442,42 @@ def prepare_clean_df(raw_df, info):
 
     if info["code"] == "earn_nt_net":
         try:
-            filters = {
-                'estruct': 'NET',
-                'ecase': 'CPL_CH2_AW100_100',
-                'currency': 'EUR'
-            }
-            
+            filters = {'estruct': 'NET', 'ecase': 'CPL_CH2_AW100_100', 'currency': 'EUR'}
             for key, value in filters.items():
-                if key in df.columns:
-                    if value in df[key].unique():
-                        df = df[df[key] == value]
-            
+                if key in df.columns and value in df[key].unique():
+                    df = df[df[key] == value]
             if 'freq' in df.columns:
                 df = df[df['freq'] == 'A']
-            
             year_cols = [c for c in df.columns if str(c).isdigit() and int(c) >= 1990]
             if 'geo' in df.columns and year_cols:
                 melted = pd.melt(df, id_vars=['geo'], value_vars=year_cols, var_name='Év', value_name='Érték')
                 melted['Év'] = melted['Év'].astype(int)
                 melted['Érték'] = pd.to_numeric(melted['Érték'], errors='coerce')
                 return melted.groupby(['geo', 'Év'], as_index=False)['Érték'].mean()
-        except Exception as e:
+        except Exception:
             return pd.DataFrame()
 
     if info["code"] == "demo_find":
         try:
-            if 'indic_de' in df.columns and 'indic_de' in info:
-                if info['indic_de'] in df['indic_de'].unique():
-                    df = df[df['indic_de'] == info['indic_de']]
-            
+            if 'indic_de' in df.columns and 'indic_de' in info and info['indic_de'] in df['indic_de'].unique():
+                df = df[df['indic_de'] == info['indic_de']]
             if 'sex' in df.columns:
                 df = df[df['sex'] == 'T']
-            
             if 'freq' in df.columns:
                 df = df[df['freq'] == 'A']
-            
             year_cols = [c for c in df.columns if str(c).isdigit() and int(c) >= 1990]
             if 'geo' in df.columns and year_cols:
                 melted = pd.melt(df, id_vars=['geo'], value_vars=year_cols, var_name='Év', value_name='Érték')
                 melted['Év'] = melted['Év'].astype(int)
                 melted['Érték'] = pd.to_numeric(melted['Érték'], errors='coerce')
                 return melted.groupby(['geo', 'Év'], as_index=False)['Érték'].mean()
-        except Exception as e:
+        except Exception:
             return pd.DataFrame()
 
     filter_keys = ['unit', 'na_item', 'coicop', 'age', 'sex', 'sector', 'indi', 'wstatus', 'int_rt', 'icha11_hc', 'icd10', 'cofog99', 'isced11', 'purchase', 'indic_sb', 'indic_de', 'hlth_hle']
     for key in filter_keys:
-        if key in info and key in df.columns:
-            if info[key] in df[key].unique():
-                df = df[df[key] == info[key]]
+        if key in info and key in df.columns and info[key] in df[key].unique():
+            df = df[df[key] == info[key]]
 
     if 'freq' in df.columns:
         df = df[df['freq'] == 'A']
@@ -484,7 +496,7 @@ def prepare_clean_df(raw_df, info):
     return pd.DataFrame()
 
 # -----------------------------------------------------------------------------
-# SIDEBAR BEÁLLÍTÁSOK
+# SIDEBAR CONTROLS
 # -----------------------------------------------------------------------------
 st.sidebar.header("⚙️ Összehasonlítandó országok és időszak beállítása")
 
@@ -498,12 +510,10 @@ selected_countries = st.sidebar.multiselect(
 )
 
 year_range = st.sidebar.slider("Időszak:", 1990, 2026, (2010, 2026))
-
-# 3. BASE YEAR IS DYNAMICALLY FIXED TO THE FIRST VISIBLE YEAR SET ON THE SLIDER
 base_year = year_range[0]
 
 # -----------------------------------------------------------------------------
-# FELDOLGOZÁS ÉS MEGJELENÍTÉS (MINDEN MUTATÓ AUTOMATIKUSEN)
+# INDICATORS LOOP & VISUALIZATIONS
 # -----------------------------------------------------------------------------
 indicator_counter = 0
 
@@ -557,7 +567,6 @@ for label, info in INDICATORS.items():
             if len(valid_years) >= 2:
                 start_rank = raw_dict[valid_years[0]]
                 end_rank = raw_dict[valid_years[-1]]
-                
                 rank_change = start_rank - end_rank
 
                 if rank_change > 0:
@@ -585,7 +594,6 @@ for label, info in INDICATORS.items():
         filtered_df['Ország'] = filtered_df['geo'].map(lambda x: EU_COUNTRIES.get(x, x))
 
         if not filtered_df.empty:
-            # Prepare both Absolute and Indexed values in the DataFrame upfront
             base_values = filtered_df[filtered_df['Év'] == base_year].set_index('Ország')['Érték'].to_dict()
             filtered_df['Indexed_Érték'] = filtered_df.apply(
                 lambda r: (r['Érték'] / base_values[r['Ország']]) * 100 if r['Ország'] in base_values and base_values[r['Ország']] != 0 else None, axis=1
@@ -599,7 +607,6 @@ for label, info in INDICATORS.items():
             ordered_countries = [c for c in SORT_ORDER if c in present_countries]
             ordered_countries += sorted([c for c in present_countries if c not in SORT_ORDER])
 
-            # Generate absolute trace figure
             fig_abs = px.line(
                 filtered_df,
                 x='Év',
@@ -612,7 +619,6 @@ for label, info in INDICATORS.items():
                 labels={'Absolute_Érték': 'Érték'}
             )
 
-            # Generate indexed trace figure
             fig_idx = px.line(
                 filtered_df,
                 x='Év',
@@ -627,7 +633,6 @@ for label, info in INDICATORS.items():
 
             grid_fig = go.Figure()
 
-            # Add traces for absolute figures
             for trace in fig_abs.data:
                 if trace.name == "Magyarország":
                     trace.line.color = '#D62728'
@@ -647,7 +652,6 @@ for label, info in INDICATORS.items():
                 trace.visible = True
                 grid_fig.add_trace(trace)
 
-            # Add traces for indexed figures
             for trace in fig_idx.data:
                 if trace.name == "Magyarország":
                     trace.line.color = '#D62728'
@@ -669,7 +673,7 @@ for label, info in INDICATORS.items():
 
             n_traces = len(fig_abs.data)
 
-            # 3. BUTTON MOVED NEXT TO CÍMKÉK BUTTONS IN THE PLOTLY CONTROL MENU
+            # 1. FIXED: SINGLE-CLICK BUTTON TOGGLES IN PLOTLY CONTROL MENU
             grid_fig.update_layout(
                 height=460,
                 hovermode="x unified",
@@ -703,18 +707,7 @@ for label, info in INDICATORS.items():
                 margin=dict(b=10, t=50, l=10, r=10),
                 updatemenus=[
                     dict(
-                        buttons=list([
-                            dict(
-                                label="Címkék: KI",
-                                method="restyle",
-                                args=[{"mode": "lines+markers"}],
-                            ),
-                            dict(
-                                label="Címkék: BE",
-                                method="restyle",
-                                args=[{"mode": "lines+markers+text"}],
-                            )
-                        ]),
+                        type="buttons",
                         direction="right",
                         showactive=True,
                         x=0.0,
@@ -724,10 +717,33 @@ for label, info in INDICATORS.items():
                         font=dict(color="#000000"),
                         bgcolor="#f0f0f0",
                         bordercolor="#cccccc",
-                        borderwidth=1
+                        borderwidth=1,
+                        buttons=[
+                            dict(
+                                label="Címkék: BE",
+                                method="restyle",
+                                args=[{"mode": "lines+markers+text"}],
+                            ),
+                            dict(
+                                label="Címkék: KI",
+                                method="restyle",
+                                args=[{"mode": "lines+markers"}],
+                            )
+                        ]
                     ),
                     dict(
-                        buttons=list([
+                        type="buttons",
+                        direction="right",
+                        showactive=True,
+                        x=0.40,
+                        xanchor="left",
+                        y=1.15,
+                        yanchor="top",
+                        font=dict(color="#000000"),
+                        bgcolor="#f0f0f0",
+                        bordercolor="#cccccc",
+                        borderwidth=1,
+                        buttons=[
                             dict(
                                 label="Abszolút érték",
                                 method="update",
@@ -744,29 +760,20 @@ for label, info in INDICATORS.items():
                                     {"yaxis.title.text": f"Index ({base_year} = 100%)"}
                                 ],
                             )
-                        ]),
-                        direction="right",
-                        showactive=True,
-                        x=0.25,
-                        xanchor="left",
-                        y=1.15,
-                        yanchor="top",
-                        font=dict(color="#000000"),
-                        bgcolor="#f0f0f0",
-                        bordercolor="#cccccc",
-                        borderwidth=1
+                        ]
                     )
                 ]
             )
 
             st.plotly_chart(grid_fig, use_container_width=True, config=MOBILE_PLOT_CONFIG)
 
+            # 2. FIXED: RESPONSIVE WRAPPED TABLE
             row_eu13_vals = [ranks_dict[y]["eu13"] for y in years_in_range] + [diff_eu13_html]
             row_eu27_vals = [ranks_dict[y]["eu27"] for y in years_in_range] + [diff_eu27_html]
 
             col_names = years_in_range + ["Változás"]
 
-            html_table = '<table class="rank-table">'
+            html_table = '<div class="table-container"><table class="rank-table">'
             html_table += '<thead><tr><th></th>'
             for col in col_names:
                 html_table += f'<th>{col}</th>'
@@ -782,7 +789,7 @@ for label, info in INDICATORS.items():
                 html_table += f'<td>{val}</td>'
             html_table += '</tr>'
 
-            html_table += '</tbody></table>'
+            html_table += '</tbody></table></div>'
 
             st.markdown(html_table, unsafe_allow_html=True)
 
@@ -847,7 +854,7 @@ for label, info in INDICATORS.items():
         st.error(f"Nem sikerült letölteni az adatokat az Eurostatról ({info['code']}).")
 
 # -----------------------------------------------------------------------------
-# MODUL 2: KÉT MUTATÓ EGYÜTTES ÁBRÁZOLÁSA (DUAL-AXIS DIAGRAM / KORRELÁCIÓ)
+# DUAL-AXIS MODULE
 # -----------------------------------------------------------------------------
 st.markdown("---")
 st.header("🔀 Két Mutató Együttes Ábrázolása (Dual-Axis Korreláció)")
