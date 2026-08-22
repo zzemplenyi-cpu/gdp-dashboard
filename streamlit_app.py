@@ -206,7 +206,8 @@ INDICATORS = {
         "code": "nama_10_pc",
         "unit": "PC_EU27_2020_HAB_MPPS_CP",
         "na_item": "B1GQ",
-        "desc": "Vásárlóerő-paritáson mért egy főre jutó GDP (EU27_2020 átlag = 100%)",
+        "desc": "Vásárlóerő-paritáson mért egy főre jutó GDP (EU27 átlaga = 100%)",
+        "analysis": "A Magyar gazdaság teljesítménye közeledett az EU átlagához, de a régió felzárkózásának üteme jelentősen gyorsabb volt",
         "higher_is_better": True
     },
     "2 keresős 2 gyermekes család nettó éves keresete euróban": {
@@ -215,6 +216,7 @@ INDICATORS = {
         "estruct": "NET",
         "ecase": "CPL_CH2_AW100_100",
         "desc": "Éves nettó kereset EUR-ban a családi adókedvezmények után (kétkeresős, 2 gyermekes háztartás, ahol mindkét szülő az átlagbér 100%-át keresi)",
+        "analysis": "Semmi extra, ide írhatod az elemzést...",
         "higher_is_better": True
     },
     "Munkanélküliségi ráta": {
@@ -223,6 +225,7 @@ INDICATORS = {
         "age": "Y15-74",
         "sex": "T",
         "desc": "Munkanélküliségi ráta a 15-74 éves népesség körében (%)",
+        "analysis": "Semmi extra, ide írhatod az elemzést...",
         "higher_is_better": False
     },
     "Foglalkoztatási ráta": {
@@ -233,12 +236,14 @@ INDICATORS = {
         "wstatus": "EMP_LFS",
         "indi": "EMPM",
         "desc": "Foglalkoztatási ráta a 20-64 éves népesség körében (%)",
+        "analysis": "Semmi extra, ide írhatod az elemzést...",
         "higher_is_better": True
     },
     "Termékenységi ráta": {
         "code": "demo_find",
         "indic_de": "TOTFERRT",
         "desc": "Teljes termékenységi arányszám (gyermek/nő)",
+        "analysis": "Semmi extra, ide írhatod az elemzést...",
         "higher_is_better": True
     },
     "Élveszületések száma 100 ezer lakosra": {
@@ -246,6 +251,7 @@ INDICATORS = {
         "indic_de": "LBIRTH",
         "calc_per_100k": True,
         "desc": "Élveszületések száma 100 000 lakosra vetítve",
+        "analysis": "Semmi extra, ide írhatod az elemzést...",
         "higher_is_better": True
     },
     "Várható élettartam": {
@@ -253,6 +259,7 @@ INDICATORS = {
         "sex": "T",
         "age": "Y_LT1",
         "desc": "Születéskor várható élettartam (évek száma)",
+        "analysis": "Semmi extra, ide írhatod az elemzést...",
         "higher_is_better": True
     },
     "Egészségben eltöltött várható élettartam": {
@@ -261,6 +268,7 @@ INDICATORS = {
         "unit": "YR",
         "hlth_hle": "HLY_Y0",
         "desc": "Egészségben eltöltött várható élettartam születéskor (évek száma)",
+        "analysis": "Semmi extra, ide írhatod az elemzést...",
         "higher_is_better": True
     },
     "Egészségügyi kiadások a GDP %-ában": {
@@ -268,6 +276,7 @@ INDICATORS = {
         "unit": "PC_GDP",
         "icha11_hc": "TOT_HC",
         "desc": "Folyó egészségügyi kiadások a GDP százalékában (%)",
+        "analysis": "Semmi extra, ide írhatod az elemzést...",
         "higher_is_better": True
     },
     "Megelőzhető és kezelhető halálozások aránya": {
@@ -276,12 +285,14 @@ INDICATORS = {
         "sex": "T",
         "icd10": "TOTAL",
         "desc": "Elkerülhető és kezelhető halálozások száma 100 000 lakosra vetítve",
+        "analysis": "Semmi extra, ide írhatod az elemzést...",
         "higher_is_better": False
     },
     "Többlethalálozás (Excess Mortality)": {
         "code": "demo_mexrt",
         "unit": "PC",
         "desc": "Többlethalálozási ráta a 2016-2019-es bázisidőszak átlagához képest (%)",
+        "analysis": "Semmi extra, ide írhatod az elemzést...",
         "higher_is_better": False
     },
     "Oktatási kiadások a GDP %-ában": {
@@ -291,6 +302,7 @@ INDICATORS = {
         "sector": "S13",
         "na_item": "TE",
         "desc": "Kormányzati oktatási kiadások a GDP százalékában (%)",
+        "analysis": "Semmi extra, ide írhatod az elemzést...",
         "higher_is_better": True
     },
     "Alapfokú oktatási kiadások a GDP %-ában": {
@@ -300,6 +312,7 @@ INDICATORS = {
         "sector": "S13",
         "na_item": "TE",
         "desc": "Kormányzati alapfokú oktatási kiadások (GF0901) a GDP százalékában (%)",
+        "analysis": "Semmi extra, ide írhatod az elemzést...",
         "higher_is_better": True
     },
     "Középfokú oktatási kiadások a GDP %-ában": {
@@ -309,6 +322,7 @@ INDICATORS = {
         "sector": "S13",
         "na_item": "TE",
         "desc": "Kormányzati középfokú oktatási kiadások (GF0902) a GDP százalékában (%)",
+        "analysis": "Semmi extra, ide írhatod az elemzést...",
         "higher_is_better": True
     },
     "Felsőfokú oktatási kiadások a GDP %-ában": {
@@ -318,6 +332,7 @@ INDICATORS = {
         "sector": "S13",
         "na_item": "TE",
         "desc": "Kormányzati felsőfokú oktatási kiadások (GF0904) a GDP százalékában (%)",
+        "analysis": "Semmi extra, ide írhatod az elemzést...",
         "higher_is_better": True
     },
     "Felsőfokú végzettségűek aránya": {
@@ -327,6 +342,7 @@ INDICATORS = {
         "sex": "T",
         "isced11": "ED5-8",
         "desc": "Felsőfokú végzettséggel rendelkező 25-34 évesek aránya (%)",
+        "analysis": "Semmi extra, ide írhatod az elemzést...",
         "higher_is_better": True
     },
     "Infláció (CPI)": {
@@ -334,6 +350,7 @@ INDICATORS = {
         "unit": "RCH_A_AVG",
         "coicop": "CP00",
         "desc": "Harmonizált fogyasztói árindex éves átlagos változása (%)",
+        "analysis": "Semmi extra, ide írhatod az elemzést...",
         "higher_is_better": False
     },
     "Költségvetési hiány a GDP %-ában": {
@@ -342,6 +359,7 @@ INDICATORS = {
         "sector": "S13",
         "na_item": "B9",
         "desc": "Kormányzati egyenleg (hiány/többlet) a GDP százalékában (%)",
+        "analysis": "Semmi extra, ide írhatod az elemzést...",
         "higher_is_better": True
     },
     "Államadósság a GDP %-ában": {
@@ -350,6 +368,7 @@ INDICATORS = {
         "sector": "S13",
         "na_item": "GD",
         "desc": "Bruttó államadósság a GDP százalékában (%)",
+        "analysis": "Semmi extra, ide írhatod az elemzést...",
         "higher_is_better": False
     },
     "10 éves államkötvényhozamok": {
@@ -357,19 +376,22 @@ INDICATORS = {
         "unit": "PC",
         "int_rt": "MCBY",
         "desc": "10 éves államkötvények másodlagos piaci hozama (%)",
+        "analysis": "Semmi extra, ide írhatod az elemzést...",
         "higher_is_better": False
     },
     "Bankok sajáttőke-arányos megtérülése (ROE)": {
         "code": "tipsbd40",
         "unit": "PC",
         "desc": "Hitelintézetek adózás utáni sajáttőke-arányos megtérülése (Return on Equity, %)",
+        "analysis": "Semmi extra, ide írhatod az elemzést...",
         "higher_is_better": True
     },
     "Extra-EU27 export aránya a teljes exportból": {
-        "code": "tet00012",
-        "indic_et": "CONT_EXP_EU",
-        "partner": "EXT_EU27_2020",
-        "desc": "Az EU-n kívüli országokba irányuló export aránya a teljes exportból (%)",
+        "code": "ext_lt_maincnt",
+        "stk_flow": "EXP",
+        "unit": "MIO_EUR",
+        "desc": "Az EU-n kívüli országokba irányuló export aránya az adott ország teljes exportjából (%)",
+        "analysis": "Semmi extra, ide írhatod az elemzést...",
         "higher_is_better": True
     },
     "Beruházási ráta": {
@@ -377,6 +399,7 @@ INDICATORS = {
         "unit": "PC_GDP",
         "na_item": "P51G",
         "desc": "Bruttó állóeszköz-felhalmozás a GDP százalékában (%)",
+        "analysis": "Semmi extra, ide írhatod az elemzést...",
         "higher_is_better": True
     },
     "Termelékenység (GDP/munkaóra)": {
@@ -384,6 +407,7 @@ INDICATORS = {
         "unit": "I10",
         "na_item": "RLPR_HW",
         "desc": "Munkatermelékenység egy munkaórára vetítve (Index, 2010 = 100%)",
+        "analysis": "Semmi extra, ide írhatod az elemzést...",
         "higher_is_better": True
     },
     "Lakásárindex": {
@@ -391,6 +415,7 @@ INDICATORS = {
         "unit": "I15_A_AVG",
         "purchase": "TOTAL",
         "desc": "Lakásárindex éves átlaga (2015 = 100%)",
+        "analysis": "Semmi extra, ide írhatod az elemzést...",
         "higher_is_better": True
     },
     "Kiadott építési engedélyek száma 100 ezer lakosra": {
@@ -401,6 +426,7 @@ INDICATORS = {
         "indic_bt": "BPRM_DW",
         "calc_per_100k": True,
         "desc": "Kiadott építési engedélyek száma 100 000 lakosra vetítve (darab)",
+        "analysis": "Semmi extra, ide írhatod az elemzést...",
         "higher_is_better": True
     },
     "Reál GDP növekedés": {
@@ -408,12 +434,14 @@ INDICATORS = {
         "unit": "CLV_PCH_PRE",
         "na_item": "B1GQ",
         "desc": "Előző évhez képesti reál GDP változás %-ban",
+        "analysis": "Semmi extra, ide írhatod az elemzést...",
         "higher_is_better": True
     },
     "Népesség": {
         "code": "demo_gind",
         "indic_de": "AVG",
         "desc": "Átlagos éves népességszám (fő)",
+        "analysis": "Semmi extra, ide írhatod az elemzést...",
         "higher_is_better": True
     }
 }
@@ -457,10 +485,13 @@ EU_COUNTRIES = {
 SORT_ORDER = ["Magyarország", "EU27 Átlag", "EU13 Átlag", "Lengyelország", "Románia"]
 
 # -----------------------------------------------------------------------------
-# EMBED DIALOG
+# EMBED DIALOG STATE MANAGEMENT
 # -----------------------------------------------------------------------------
+if "active_embed" not in st.session_state:
+    st.session_state.active_embed = None
+
 @st.dialog("🔗 Ábra beágyazása a weboldaladra / cikkedbe")
-def show_embed_modal(label_text, code_key):
+def show_embed_modal(code_key):
     st.markdown("""
     <style>
         div[role="dialog"] {
@@ -483,6 +514,10 @@ def show_embed_modal(label_text, code_key):
     st.code(embed_code, language="html")
     st.info("💡 A beágyazott grafikon megőrzi az interaktivitását, a helyezési táblázatot és az akciógombokat is!")
 
+if st.session_state.active_embed:
+    show_embed_modal(st.session_state.active_embed)
+    st.session_state.active_embed = None
+
 # -----------------------------------------------------------------------------
 # DATA LOADING & PREPARATION
 # -----------------------------------------------------------------------------
@@ -502,6 +537,35 @@ def prepare_clean_df(raw_df, info):
     geo_col = [c for c in df.columns if 'geo' in c.lower()]
     if geo_col:
         df.rename(columns={geo_col[0]: 'geo'}, inplace=True)
+
+    # Issue 1 Fix: Extra-EU Export share calculation
+    if info["code"] == "ext_lt_maincnt":
+        try:
+            if 'stk_flow' in df.columns:
+                df = df[df['stk_flow'] == 'EXP']
+            if 'unit' in df.columns:
+                df = df[df['unit'] == 'MIO_EUR']
+            
+            partner_col = [c for c in df.columns if 'partner' in c.lower()]
+            if partner_col and 'geo' in df.columns:
+                p_col = partner_col[0]
+                df_ext = df[df[p_col] == 'EXT_EU27_2020']
+                df_world = df[df[p_col] == 'WORLD']
+                
+                year_cols = [c for c in df.columns if str(c).isdigit() and int(c) >= 1990]
+                
+                m_ext = pd.melt(df_ext, id_vars=['geo'], value_vars=year_cols, var_name='Év', value_name='EXT')
+                m_world = pd.melt(df_world, id_vars=['geo'], value_vars=year_cols, var_name='Év', value_name='WORLD')
+                
+                merged = pd.merge(m_ext, m_world, on=['geo', 'Év'])
+                merged['Év'] = merged['Év'].astype(int)
+                merged['EXT'] = pd.to_numeric(merged['EXT'], errors='coerce')
+                merged['WORLD'] = pd.to_numeric(merged['WORLD'], errors='coerce')
+                
+                merged['Érték'] = (merged['EXT'] / merged['WORLD']) * 100.0
+                return merged.groupby(['geo', 'Év'], as_index=False)['Érték'].mean().dropna()
+        except Exception:
+            return pd.DataFrame()
 
     # Convert Eurostat code for bank ROE EU average
     if info["code"] == "tipsbd40":
@@ -546,20 +610,20 @@ def prepare_clean_df(raw_df, info):
         if key in info and key in df.columns and info[key] in df[key].unique():
             df = df[df[key] == info[key]]
 
+    # Issue 2 Fix: Monthly datasets like demo_mexrt aggregated properly
+    monthly_cols = [c for c in df.columns if 'M' in str(c) and str(c)[:4].isdigit() and int(str(c)[:4]) >= 1990]
+    if monthly_cols and 'geo' in df.columns:
+        melted_m = pd.melt(df, id_vars=['geo'], value_vars=monthly_cols, var_name='Month', value_name='Érték')
+        melted_m['Év'] = melted_m['Month'].apply(lambda x: int(str(x)[:4]))
+        melted_m['Érték'] = pd.to_numeric(melted_m['Érték'], errors='coerce')
+        return melted_m.groupby(['geo', 'Év'], as_index=False)['Érték'].mean().dropna()
+
     if 'freq' in df.columns:
         df = df[df['freq'] == 'A']
     if 'counterpart_area' in df.columns:
         df = df[df['counterpart_area'] == 'W2']
     if 'sector2' in df.columns:
         df = df[df['sector2'] == 'S1']
-
-    # Process monthly datasets (e.g., demo_mexrt)
-    monthly_cols = [c for c in df.columns if 'M' in str(c) and str(c)[:4].isdigit() and int(str(c)[:4]) >= 1990]
-    if monthly_cols and 'geo' in df.columns:
-        melted_m = pd.melt(df, id_vars=['geo'], value_vars=monthly_cols, var_name='Month', value_name='Érték')
-        melted_m['Év'] = melted_m['Month'].apply(lambda x: int(str(x)[:4]))
-        melted_m['Érték'] = pd.to_numeric(melted_m['Érték'], errors='coerce')
-        return melted_m.groupby(['geo', 'Év'], as_index=False)['Érték'].mean()
 
     year_cols = [c for c in df.columns if str(c).isdigit() and int(c) >= 1990]
     
@@ -577,7 +641,6 @@ def prepare_clean_df(raw_df, info):
             if not pop_df.empty:
                 merged = pd.merge(cleaned_df, pop_df, on=['geo', 'Év'], suffixes=('', '_pop'))
                 
-                # If unit was in thousands (e.g. THS in building permits), adjust multiplier
                 multiplier = 100000.0
                 if info.get("unit") == "THS":
                     multiplier = 100000.0 * 1000.0
@@ -617,7 +680,11 @@ for label, info in INDICATORS.items():
     
     st.markdown("---")
     st.subheader(f"📊 {label}")
-    st.markdown(f"<div style='color: #000000; font-size: 14px; margin-bottom: 10px;'>{info['desc']}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='color: #000000; font-size: 14px; margin-bottom: 5px;'>{info['desc']}</div>", unsafe_allow_html=True)
+    
+    # Issue 3 Fix: Analysis text displayed under description
+    if "analysis" in info and info["analysis"]:
+        st.markdown(f"<div style='color: #1e293b; font-size: 13px; font-style: italic; margin-bottom: 12px; font-weight: 500;'>{info['analysis']}</div>", unsafe_allow_html=True)
 
     with st.spinner(f"Adatok betöltése ({label})..."):
         raw_df = load_eurostat_dataset(info["code"])
@@ -765,7 +832,6 @@ for label, info in INDICATORS.items():
 
             n_traces = len(fig_abs.data)
 
-            # CLEANED & EXPANDED MOBILE-FRIENDLY LAYOUT
             yaxis_kwargs = dict(
                 fixedrange=True,
                 title=dict(text="", font=dict(color="#000000")),
@@ -775,6 +841,7 @@ for label, info in INDICATORS.items():
             if label == "Költségvetési hiány a GDP %-ában":
                 yaxis_kwargs["autorange"] = "reversed"
 
+            # Issue 4 Fix: Compact legend entries spacing
             grid_fig.update_layout(
                 height=520,
                 hovermode="x unified",
@@ -799,11 +866,9 @@ for label, info in INDICATORS.items():
                     x=0.5,
                     font=dict(color="#000000", size=10),
                     itemwidth=30,
-                    entrywidthmode="pixels",
-                    entrywidth=70
+                    tracegroupgap=0
                 ),
                 updatemenus=[
-                    # LEFT SIDE: Abszolút / Bázisindex Toggle
                     dict(
                         type="buttons",
                         direction="right",
@@ -834,7 +899,6 @@ for label, info in INDICATORS.items():
                             )
                         ]
                     ),
-                    # RIGHT SIDE: Címkék Toggle
                     dict(
                         type="buttons",
                         direction="right",
@@ -866,7 +930,6 @@ for label, info in INDICATORS.items():
 
             st.plotly_chart(grid_fig, use_container_width=True, config=MOBILE_PLOT_CONFIG)
 
-            # RESPONSIVE WRAPPED TABLE
             row_eu13_vals = [ranks_dict[y]["eu13"] for y in years_in_range] + [diff_eu13_html]
             row_eu27_vals = [ranks_dict[y]["eu27"] for y in years_in_range] + [diff_eu27_html]
 
@@ -937,8 +1000,10 @@ for label, info in INDICATORS.items():
             col1, col2, col3 = st.columns([2, 4, 4])
             
             with col1:
+                # Issue 5 Fix: Handled via state change to avoid crashing
                 if st.button(f"🔗 Beágyazási kód", key=f"embed_{info['code']}_{unique_key_suffix}"):
-                    show_embed_modal(label, info['code'])
+                    st.session_state.active_embed = info['code']
+                    st.rerun()
             
             with col2:
                 st.markdown("<div style='padding-top: 6px; font-size: 12px; color: #000000 !important; font-weight: bold;'>Adatforrás: <b>Eurostat</b></div>", unsafe_allow_html=True)
